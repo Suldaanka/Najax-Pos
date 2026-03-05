@@ -11,7 +11,7 @@ COPY package*.json ./
 COPY prisma ./prisma/
 
 # Install all dependencies (including devDependencies needed for build)
-RUN npm install
+RUN npm install --workspaces=false
 
 # Copy the rest of the application code
 COPY . .
@@ -35,7 +35,7 @@ COPY package*.json ./
 COPY prisma ./prisma/
 
 # Install only production dependencies
-RUN npm install --omit=dev
+RUN npm install --omit=dev --workspaces=false
 
 # Copy generated Prisma client from builder stage
 COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
