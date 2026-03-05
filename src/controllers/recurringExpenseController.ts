@@ -53,7 +53,7 @@ export class RecurringExpenseController {
 
     static async updateRecurringExpense(req: AuthRequest, res: Response) {
         try {
-            const { id } = req.params;
+            const id = req.params.id as string;
             const { name, amount } = req.body;
 
             const recurringExpense = await prisma.recurringExpense.update({
@@ -70,7 +70,7 @@ export class RecurringExpenseController {
 
     static async deleteRecurringExpense(req: AuthRequest, res: Response) {
         try {
-            const { id } = req.params;
+            const id = req.params.id as string;
 
             await prisma.recurringExpense.delete({
                 where: { id }
