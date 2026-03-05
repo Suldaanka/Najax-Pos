@@ -1,0 +1,32 @@
+services:
+  - type: web
+    name: najax-backend
+    env: node
+    plan: free
+    buildCommand: npm install && npm run build
+    startCommand: npm run start
+    envVars:
+      - key: NODE_VERSION
+        value: 20
+      - key: DATABASE_URL
+        fromDatabase:
+          name: najax-db
+          property: connectionString
+      - key: BETTER_AUTH_SECRET
+        generateValue: true
+      - key: BETTER_AUTH_URL
+        # Render will automatically assign a URL, but we need this explicitly set for cookies
+        # After deployment, if your app URL differs, update it in the Render Dashboard.
+        value: https://najax-backend.onrender.com
+      - key: FRONTEND_URL
+        # Replace this with your frontend's actual URL once deployed (e.g., Vercel / Netlify / Expo Web)
+        # OR use a wildcard/local URL for testing
+        value: "*"
+      # Note: Add your GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, and SMTP emails manually 
+      # in the Render Dashboard's Environment Variables tab after it deploys.
+
+databases:
+  - name: najax-db
+    plan: free
+    databaseName: najax_pos
+    user: najax_user
