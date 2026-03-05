@@ -1,5 +1,5 @@
 import { betterAuth } from "better-auth";
-import { PrismaAdapter } from "better-auth/adapters/prisma";
+import { prismaAdapter } from "better-auth/adapters/prisma";
 import { prisma } from "./prisma";
 import { InvitationService } from "../services/invitationService";
 import { expo } from "@better-auth/expo";
@@ -7,7 +7,7 @@ import { expo } from "@better-auth/expo";
 export const auth = betterAuth({
     plugins: [expo()],
     baseURL: process.env.BETTER_AUTH_URL || "http://localhost:5000",
-    database: PrismaAdapter(prisma, {
+    database: prismaAdapter(prisma, {
         provider: "postgresql",
     }),
     databaseHooks: {
