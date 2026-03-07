@@ -17,6 +17,7 @@ RUN npm install --workspaces=false
 COPY . .
 
 # Generate Prisma client and build TypeScript
+ENV DATABASE_URL="postgresql://dummy:dummy@localhost:5432/dummy"
 RUN npm run build
 
 # ---------------------------------------
