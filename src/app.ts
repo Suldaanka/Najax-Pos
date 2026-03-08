@@ -20,6 +20,9 @@ import dashboardRoutes from './routes/dashboard';
 
 const app = express();
 
+// Trust proxy for Railway/Production to handle HTTPS/Cookies correctly
+app.set('trust proxy', true);
+
 // CORS must come before Better Auth handler
 app.use(cors({
     origin: (origin, callback) => {
