@@ -33,7 +33,9 @@ export const auth = betterAuth({
         process.env.BETTER_AUTH_URL || "http://localhost:5000",
         "http://10.95.253.240:5000",
         "exp://10.95.253.240:8081",
-        "najaxapp://"
+        "najaxapp://",
+        "exp://192.168.0.0/16", // Optional IP ranges
+        "exp://" // Try generic
     ],
     advanced: {
         cookiePrefix: "najax",
