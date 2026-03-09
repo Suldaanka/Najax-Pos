@@ -13,6 +13,7 @@ const getBaseURL = () => {
 export const auth = betterAuth({
     plugins: [expo()],
     baseURL: getBaseURL(),
+    trustHost: true,
     secret: process.env.BETTER_AUTH_SECRET,
     database: prismaAdapter(prisma, {
         provider: "postgresql",
@@ -48,8 +49,8 @@ export const auth = betterAuth({
     advanced: {
         cookiePrefix: "najax",
         defaultCookieAttributes: {
-            sameSite: "none",
-            secure: true,
+            sameSite: process.env.NODE_ENV === "production" && !process.env.BETTER_AUTH_URL?.includes("localhost") ? "none" : "lax",
+            secure: process.env.NODE_ENV === "production" && !process.env.BETTER_AUTH_URL?.includes("localhost"),
             httpOnly: true,
         }
     },
