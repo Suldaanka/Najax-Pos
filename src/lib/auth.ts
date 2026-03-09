@@ -5,8 +5,8 @@ import { InvitationService } from "../services/invitationService";
 import { expo } from "@better-auth/expo";
 
 const getBaseURL = () => {
-    const rawUrl = process.env.BETTER_AUTH_URL || "http://localhost:5000";
-    return rawUrl.endsWith("/api/auth") ? rawUrl : (rawUrl.endsWith("/") ? `${rawUrl}api/auth` : `${rawUrl}/api/auth`);
+    // Better Auth works best when the baseURL is the root URL of the auth server
+    return process.env.BETTER_AUTH_URL || "http://localhost:5000";
 };
 
 export const auth = betterAuth({
@@ -36,14 +36,12 @@ export const auth = betterAuth({
     trustedOrigins: [
         process.env.FRONTEND_URL || "http://localhost:3000",
         process.env.BETTER_AUTH_URL || "http://localhost:5000",
+        "http://localhost:3000", // Explicitly allow local testing
         "https://najax-pos-production.up.railway.app",
         "najaxapp://",
     ],
     advanced: {
         cookiePrefix: "najax",
-        crossSubDomainCookies: {
-            enabled: true,
-        },
         defaultCookieAttributes: {
             sameSite: "none",
             secure: true,
