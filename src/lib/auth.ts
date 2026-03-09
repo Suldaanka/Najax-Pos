@@ -5,13 +5,15 @@ import { InvitationService } from "../services/invitationService";
 import { expo } from "@better-auth/expo";
 
 const getBaseURL = () => {
-    // Better Auth works best when the baseURL is the root URL of the auth server
-    return process.env.BETTER_AUTH_URL || "http://localhost:5000";
+    // The baseURL MUST include the path where Better Auth is mounted (/api/auth)
+    const rawUrl = process.env.BETTER_AUTH_URL || "http://localhost:5000";
+    return rawUrl.endsWith("/api/auth") ? rawUrl : (rawUrl.endsWith("/") ? `${rawUrl}api/auth` : `${rawUrl}/api/auth`);
 };
 
 export const auth = betterAuth({
     plugins: [expo()],
     baseURL: getBaseURL(),
+    secret: process.env.BETTER_AUTH_SECRET,
     database: prismaAdapter(prisma, {
         provider: "postgresql",
     }),
@@ -36,7 +38,7 @@ export const auth = betterAuth({
     trustedOrigins: [
         process.env.FRONTEND_URL || "http://localhost:3000",
         process.env.BETTER_AUTH_URL || "http://localhost:5000",
-        "http://localhost:3000", // Explicitly allow local testing
+        "http://localhost:3000",
         "https://najax-pos-production.up.railway.app",
         "najaxapp://",
     ],
