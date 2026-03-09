@@ -39,8 +39,11 @@ export const auth = betterAuth({
         process.env.FRONTEND_URL || "http://localhost:3000",
         process.env.BETTER_AUTH_URL || "http://localhost:5000",
         "http://localhost:3000",
+        "http://localhost:5000",
         "https://najax-pos-production.up.railway.app",
         "najaxapp://",
+        "exp://",
+        "http://10.0.2.2:5000", // Android Emulator loopback
     ],
     advanced: {
         cookiePrefix: "najax",
