@@ -13,6 +13,7 @@ const getBaseURL = () => {
 export const auth = betterAuth({
     plugins: [expo()],
     baseURL: getBaseURL(),
+    trustHost: true,
     secret: process.env.BETTER_AUTH_SECRET,
     database: prismaAdapter(prisma, {
         provider: "postgresql",
