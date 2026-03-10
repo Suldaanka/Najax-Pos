@@ -120,6 +120,47 @@ export class InvitationController {
                 }
             });
 
+            // --- AUTO-LINKING LOGIC ---
+            // If the user already exists and has no active business, link them immediately
+            const targetUser = await prisma.user.findUnique({
+                where: { email }
+            });
+
+            if (targetUser && !targetUser.activeBusinessId) {
+                console.log(`Auto-linking existing user ${targetUser.id} to business ${business.id}`);
+
+                // Create membership
+                await prisma.businessMember.create({
+                    data: {
+                        userId: targetUser.id,
+                        businessId: business.id,
+                        role: role || 'STAFF'
+                    }
+                });
+
+                // Update user's active business
+                await prisma.user.update({
+                    where: { id: targetUser.id },
+                    data: { activeBusinessId: business.id }
+                });
+
+                // Mark invitation as accepted
+                await prisma.invitation.update({
+                    where: { id: invitation.id },
+                    data: { status: 'ACCEPTED' }
+                });
+
+                return res.status(200).json({
+                    message: 'User was already registered and has been added to your business immediately.',
+                    invitation: {
+                        id: invitation.id,
+                        email: invitation.email,
+                        role: invitation.role,
+                        status: 'ACCEPTED'
+                    }
+                });
+            }
+
             // Send invitation email
             await emailService.sendInvitationEmail(
                 email,
