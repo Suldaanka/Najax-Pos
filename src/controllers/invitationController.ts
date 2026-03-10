@@ -4,16 +4,18 @@ import { prisma } from '../lib/prisma';
 import { emailService } from '../services/emailService';
 import crypto from 'crypto';
 
+import { fromNodeHeaders } from "better-auth/node";
+
 export class InvitationController {
     // Invite staff member (Owner only)
     static async inviteStaff(req: Request, res: Response) {
         try {
             const session = await auth.api.getSession({
-                headers: req.headers as any
+                headers: fromNodeHeaders(req.headers)
             });
 
             if (!session) {
-                return res.status(401).json({ error: 'Not authenticated' });
+                return res.status(401).json({ error: 'Not authenticated', details: 'No session found' });
             }
 
             const { email, role } = req.body;
@@ -25,7 +27,7 @@ export class InvitationController {
             // Validate role
             const validRoles = ['STAFF', 'OWNER'];
             if (role && !validRoles.includes(role)) {
-                return res.status(400).json({ error: 'Invalid role' });
+                return res.status(400).json({ error: 'Invalid role', details: `Role ${role} is not valid` });
             }
 
             // Get user's active business
@@ -34,7 +36,10 @@ export class InvitationController {
             });
 
             if (!user?.activeBusinessId) {
-                return res.status(400).json({ error: 'You must have an active business to invite staff' });
+                return res.status(400).json({
+                    error: 'You must have an active business to invite staff',
+                    details: 'User record missing activeBusinessId'
+                });
             }
 
             const business = await prisma.business.findUnique({
@@ -130,7 +135,7 @@ export class InvitationController {
     static async acceptInvitation(req: Request, res: Response) {
         try {
             const session = await auth.api.getSession({
-                headers: req.headers as any
+                headers: fromNodeHeaders(req.headers)
             });
 
             if (!session) {
@@ -230,7 +235,7 @@ export class InvitationController {
     static async listInvitations(req: Request, res: Response) {
         try {
             const session = await auth.api.getSession({
-                headers: req.headers as any
+                headers: fromNodeHeaders(req.headers)
             });
 
             if (!session) {
@@ -284,7 +289,7 @@ export class InvitationController {
     static async revokeInvitation(req: Request, res: Response) {
         try {
             const session = await auth.api.getSession({
-                headers: req.headers as any
+                headers: fromNodeHeaders(req.headers)
             });
 
             if (!session) {
