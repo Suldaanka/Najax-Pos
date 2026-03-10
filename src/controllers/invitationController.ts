@@ -9,16 +9,24 @@ import { fromNodeHeaders } from "better-auth/node";
 export class InvitationController {
     // Invite staff member (Owner only)
     static async inviteStaff(req: Request, res: Response) {
+        console.log('--- Invite Staff Debug ---');
+        console.log('Body:', JSON.stringify(req.body));
+        console.log('Headers:', JSON.stringify(req.headers));
+
         try {
             const session = await auth.api.getSession({
                 headers: fromNodeHeaders(req.headers)
             });
+
+            console.log('Session found:', !!session);
+            if (session) console.log('User ID:', session.user.id);
 
             if (!session) {
                 return res.status(401).json({ error: 'Not authenticated', details: 'No session found' });
             }
 
             const { email, role } = req.body;
+            console.log('Email:', email, 'Role:', role);
 
             if (!email) {
                 return res.status(400).json({ error: 'Email is required' });
@@ -35,6 +43,8 @@ export class InvitationController {
                 where: { id: session.user.id }
             });
 
+            console.log('User activeBusinessId:', user?.activeBusinessId);
+
             if (!user?.activeBusinessId) {
                 return res.status(400).json({
                     error: 'You must have an active business to invite staff',
@@ -47,6 +57,7 @@ export class InvitationController {
             });
 
             if (!business) {
+                console.log('Business not found for ID:', user.activeBusinessId);
                 return res.status(400).json({ error: 'Active business not found' });
             }
 
@@ -57,6 +68,8 @@ export class InvitationController {
                     businessId: business.id
                 }
             });
+
+            console.log('Membership found:', !!membership, 'Role:', membership?.role);
 
             if (!membership || membership.role !== 'OWNER') {
                 return res.status(403).json({ error: 'Only business owners can invite staff' });
