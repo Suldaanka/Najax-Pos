@@ -41,7 +41,7 @@ export const auth = betterAuth({
         "http://localhost:3000",
         "http://localhost:5000",
         "https://najax-pos-production.up.railway.app",
-        "https://najax-pos-frontend-.netlify.app", // User's new Netlify production URL
+        "https://zingy-dasik-cc0f46.netlify.app", // User's actual Netlify production URL
         "najaxapp://",
         "exp://",
         "http://10.0.2.2:5000", // Android Emulator loopback
