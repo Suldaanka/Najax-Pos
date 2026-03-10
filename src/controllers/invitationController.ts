@@ -126,39 +126,50 @@ export class InvitationController {
                 where: { email }
             });
 
+            console.log('Target user search result:', targetUser ? `Found (ID: ${targetUser.id})` : 'Not found');
+
             if (targetUser && !targetUser.activeBusinessId) {
-                console.log(`Auto-linking existing user ${targetUser.id} to business ${business.id}`);
+                console.log(`[Auto-Link] Linking user ${targetUser.id} to business ${business.id}`);
 
-                // Create membership
-                await prisma.businessMember.create({
-                    data: {
-                        userId: targetUser.id,
-                        businessId: business.id,
-                        role: role || 'STAFF'
-                    }
-                });
+                try {
+                    // Create membership
+                    await prisma.businessMember.create({
+                        data: {
+                            userId: targetUser.id,
+                            businessId: business.id,
+                            role: (role || 'STAFF') as any
+                        }
+                    });
+                    console.log(`[Auto-Link] Membership created for ${targetUser.id}`);
 
-                // Update user's active business
-                await prisma.user.update({
-                    where: { id: targetUser.id },
-                    data: { activeBusinessId: business.id }
-                });
+                    // Update user's active business
+                    await prisma.user.update({
+                        where: { id: targetUser.id },
+                        data: { activeBusinessId: business.id }
+                    });
+                    console.log(`[Auto-Link] User ${targetUser.id} activeBusinessId set to ${business.id}`);
 
-                // Mark invitation as accepted
-                await prisma.invitation.update({
-                    where: { id: invitation.id },
-                    data: { status: 'ACCEPTED' }
-                });
+                    // Mark invitation as accepted
+                    await prisma.invitation.update({
+                        where: { id: invitation.id },
+                        data: { status: 'ACCEPTED' }
+                    });
+                    console.log(`[Auto-Link] Invitation ${invitation.id} marked as ACCEPTED`);
 
-                return res.status(200).json({
-                    message: 'User was already registered and has been added to your business immediately.',
-                    invitation: {
-                        id: invitation.id,
-                        email: invitation.email,
-                        role: invitation.role,
-                        status: 'ACCEPTED'
-                    }
-                });
+                    return res.status(200).json({
+                        message: 'User was already registered and has been added to your business immediately.',
+                        invitation: {
+                            id: invitation.id,
+                            email: invitation.email,
+                            role: invitation.role,
+                            status: 'ACCEPTED'
+                        }
+                    });
+                } catch (linkError) {
+                    console.error('[Auto-Link] Critical Failure:', linkError);
+                    // We don't return here because we already created the PENDING invitation, 
+                    // which is a valid fallback.
+                }
             }
 
             // Send invitation email
