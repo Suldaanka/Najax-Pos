@@ -41,6 +41,7 @@ export const auth = betterAuth({
         "http://localhost:3000",
         "http://localhost:5000",
         "https://najax-pos-production.up.railway.app",
+        "https://najax-pos-frontend-.netlify.app", // User's new Netlify production URL
         "najaxapp://",
         "exp://",
         "http://10.0.2.2:5000", // Android Emulator loopback
@@ -48,7 +49,8 @@ export const auth = betterAuth({
     advanced: {
         cookiePrefix: "najax",
         defaultCookieAttributes: {
-            sameSite: "lax",
+            // Must be "none" for cross-domain cookies (Netlify -> Railway)
+            sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
             secure: process.env.NODE_ENV === "production",
             httpOnly: true,
         }
