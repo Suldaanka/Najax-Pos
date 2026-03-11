@@ -41,6 +41,7 @@ export const auth = betterAuth({
         process.env.BETTER_AUTH_URL || "http://localhost:5000",
         "http://localhost:3000",
         "http://localhost:5000",
+        "https://najax-pos-frontend-production.up.railway.app",
         "https://najax-pos-production.up.railway.app",
         "https://zingy-dasik-cc0f46.netlify.app", // User's actual Netlify production URL
         "najaxapp://",
