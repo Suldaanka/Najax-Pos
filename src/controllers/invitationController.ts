@@ -121,33 +121,51 @@ export class InvitationController {
             });
 
             // --- AUTO-LINKING LOGIC ---
+            // Normalize email for comparison
+            const normalizedEmail = email.toLowerCase().trim();
+            
             // If the user already exists and has no active business, link them immediately
             const targetUser = await prisma.user.findUnique({
-                where: { email }
+                where: { email: normalizedEmail }
             });
 
             console.log('Target user search result:', targetUser ? `Found (ID: ${targetUser.id})` : 'Not found');
 
-            if (targetUser && !targetUser.activeBusinessId) {
-                console.log(`[Auto-Link] Linking user ${targetUser.id} to business ${business.id}`);
+            if (targetUser) {
+                console.log(`[Auto-Link] Checking user ${targetUser.id} for business ${business.id}`);
 
                 try {
-                    // Create membership
-                    await prisma.businessMember.create({
-                        data: {
-                            userId: targetUser.id,
-                            businessId: business.id,
-                            role: (role || 'STAFF') as any
+                    // Check if they are ALREADY a member
+                    const existingMembership = await prisma.businessMember.findUnique({
+                        where: {
+                            userId_businessId: {
+                                userId: targetUser.id,
+                                businessId: business.id
+                            }
                         }
                     });
-                    console.log(`[Auto-Link] Membership created for ${targetUser.id}`);
 
-                    // Update user's active business
+                    if (!existingMembership) {
+                        // Create membership
+                        await prisma.businessMember.create({
+                            data: {
+                                userId: targetUser.id,
+                                businessId: business.id,
+                                role: (role || 'STAFF') as any
+                            }
+                        });
+                        console.log(`[Auto-Link] Membership created for ${targetUser.id}`);
+                    } else {
+                        console.log(`[Auto-Link] User ${targetUser.id} is already a member.`);
+                    }
+
+                    // Update user's active business IF they don't have one or if it's currently null
+                    // Or if we just want to force it to this one since they were invited here.
                     await prisma.user.update({
                         where: { id: targetUser.id },
                         data: { activeBusinessId: business.id }
                     });
-                    console.log(`[Auto-Link] User ${targetUser.id} activeBusinessId set to ${business.id}`);
+                    console.log(`[Auto-Link] User ${targetUser.id} activeBusinessId ensured as ${business.id}`);
 
                     // Mark invitation as accepted
                     await prisma.invitation.update({
@@ -157,7 +175,7 @@ export class InvitationController {
                     console.log(`[Auto-Link] Invitation ${invitation.id} marked as ACCEPTED`);
 
                     return res.status(200).json({
-                        message: 'User was already registered and has been added to your business immediately.',
+                        message: 'User has been added to your business immediately.',
                         invitation: {
                             id: invitation.id,
                             email: invitation.email,
@@ -167,8 +185,7 @@ export class InvitationController {
                     });
                 } catch (linkError) {
                     console.error('[Auto-Link] Critical Failure:', linkError);
-                    // We don't return here because we already created the PENDING invitation, 
-                    // which is a valid fallback.
+                    // We don't return here because we already created the PENDING invitation
                 }
             }
 
@@ -346,6 +363,50 @@ export class InvitationController {
             return res.json({ invitations });
         } catch (error) {
             console.error('List invitations error:', error);
+            return res.status(500).json({ error: 'Failed to list invitations' });
+        }
+    }
+    
+    // List invitations for the current user
+    static async listMyInvitations(req: Request, res: Response) {
+        try {
+            const session = await auth.api.getSession({
+                headers: fromNodeHeaders(req.headers)
+            });
+
+            if (!session) {
+                return res.status(401).json({ error: 'Not authenticated' });
+            }
+
+            const user = await prisma.user.findUnique({
+                where: { id: session.user.id }
+            });
+
+            if (!user) {
+                return res.status(404).json({ error: 'User not found' });
+            }
+
+            const invitations = await prisma.invitation.findMany({
+                where: {
+                    email: user.email,
+                    status: 'PENDING',
+                    expiresAt: {
+                        gt: new Date()
+                    }
+                },
+                include: {
+                    business: {
+                        select: {
+                            id: true,
+                            name: true
+                        }
+                    }
+                }
+            });
+
+            return res.json({ invitations });
+        } catch (error) {
+            console.error('List my invitations error:', error);
             return res.status(500).json({ error: 'Failed to list invitations' });
         }
     }
