@@ -224,30 +224,47 @@ export class InvitationController {
                 return res.status(401).json({ error: 'Not authenticated' });
             }
 
-            const { token } = req.body;
+            const { id, token } = req.body;
 
-            if (!token) {
-                return res.status(400).json({ error: 'Token is required' });
+            if (!id && !token) {
+                return res.status(400).json({ error: 'Invitation ID or Token is required' });
             }
 
-            const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
+            let invitation;
 
-            // Find invitation
-            const invitation = await prisma.invitation.findFirst({
-                where: {
-                    token: hashedToken,
-                    status: 'PENDING',
-                    expiresAt: {
-                        gt: new Date()
+            if (id) {
+                // If ID is provided, use it directly (dashboard/UI acceptance)
+                invitation = await prisma.invitation.findFirst({
+                    where: {
+                        id,
+                        status: 'PENDING',
+                        expiresAt: {
+                            gt: new Date()
+                        }
+                    },
+                    include: {
+                        business: true
                     }
-                },
-                include: {
-                    business: true
-                }
-            });
+                });
+            } else {
+                // If token is provided, hash it (email link acceptance)
+                const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
+                invitation = await prisma.invitation.findFirst({
+                    where: {
+                        token: hashedToken,
+                        status: 'PENDING',
+                        expiresAt: {
+                            gt: new Date()
+                        }
+                    },
+                    include: {
+                        business: true
+                    }
+                });
+            }
 
             if (!invitation) {
-                return res.status(400).json({ error: 'Invalid or expired invitation' });
+                return res.status(400).json({ error: 'Invalid, expired, or already accepted invitation' });
             }
 
             // Get current user
