@@ -202,7 +202,7 @@ model Product {
   piecesPerCarton Int?
   costPrice    Decimal
   sellingPrice Decimal
-  stockQuantity Int      @default(0)
+  stockQuantity Decimal  @default(0)
   lowStockThreshold Int @default(5)
   unit         String?  @default("pcs")
   createdAt    DateTime @default(now())
@@ -278,7 +278,7 @@ model SaleItem {
   sale      Sale    @relation(fields: [saleId], references: [id])
   productId String
   product   Product @relation(fields: [productId], references: [id])
-  quantity  Int
+  quantity  Decimal
   price     Decimal
   
   @@index([saleId])
@@ -374,7 +374,7 @@ model PurchaseItem {
   purchase   Purchase @relation(fields: [purchaseId], references: [id])
   productId  String
   product    Product  @relation(fields: [productId], references: [id])
-  quantity   Int
+  quantity   Decimal
   costPrice  Decimal
   
   @@index([purchaseId])
