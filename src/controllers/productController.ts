@@ -22,7 +22,7 @@ export const getProducts = async (req: Request, res: Response) => {
 
 export const createProduct = async (req: Request, res: Response) => {
     try {
-        const { businessId, name, categoryId, costPrice, sellingPrice, stockQuantity, barcode, description, piecesPerCarton, unit } = req.body;
+        const { businessId, name, categoryId, costPrice, sellingPrice, stockQuantity, barcode, description, piecesPerCarton, piecesPerBag, unit } = req.body;
 
         if (!businessId || !name || costPrice === undefined || sellingPrice === undefined) {
             return res.status(400).json({ error: 'Missing required fields' });
@@ -32,40 +32,50 @@ export const createProduct = async (req: Request, res: Response) => {
             data: {
                 businessId,
                 name,
-                categoryId,
+                categoryId: categoryId || null,
                 costPrice,
                 sellingPrice,
                 stockQuantity: stockQuantity || 0,
-                barcode,
+                barcode: barcode || null,
                 description,
-                piecesPerCarton,
+                piecesPerCarton: piecesPerCarton || null,
+                piecesPerBag: piecesPerBag || null,
                 unit: unit || "pcs",
             },
         });
         res.status(201).json(product);
     } catch (error: any) {
         console.error('Create product error:', error);
-        require('fs').writeFileSync('backend-debug.log', JSON.stringify({ message: error.message, stack: error.stack }, null, 2));
-        res.status(500).json({ error: 'Internal server error' });
+        // Better error logging for debugging
+        const errorDetails = {
+            message: error.message,
+            code: error.code,
+            meta: error.meta,
+            stack: error.stack
+        };
+        console.error('Full Error Details:', JSON.stringify(errorDetails, null, 2));
+        require('fs').writeFileSync('backend-debug.log', JSON.stringify(errorDetails, null, 2));
+        res.status(500).json({ error: 'Internal server error', details: error.message });
     }
 };
 
 export const updateProduct = async (req: Request, res: Response) => {
     try {
         const { id } = req.params as { id: string };
-        const { name, categoryId, costPrice, sellingPrice, stockQuantity, barcode, description, piecesPerCarton, unit } = req.body;
+        const { name, categoryId, costPrice, sellingPrice, stockQuantity, barcode, description, piecesPerCarton, piecesPerBag, unit } = req.body;
 
         const product = await prisma.product.update({
             where: { id },
             data: {
                 name,
-                categoryId,
+                categoryId: categoryId || null,
                 costPrice,
                 sellingPrice,
                 stockQuantity,
-                barcode,
+                barcode: barcode || null,
                 description,
-                piecesPerCarton,
+                piecesPerCarton: piecesPerCarton || null,
+                piecesPerBag: piecesPerBag || null,
                 unit,
             },
         });
