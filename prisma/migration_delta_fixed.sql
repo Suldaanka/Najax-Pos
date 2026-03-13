@@ -1,4 +1,4 @@
--- AlterTable
+﻿-- AlterTable
 ALTER TABLE "Product" ADD COLUMN     "unit" TEXT DEFAULT 'pcs',
 ALTER COLUMN "stockQuantity" SET DEFAULT 0,
 ALTER COLUMN "stockQuantity" SET DATA TYPE DECIMAL(65,30);
@@ -102,3 +102,4 @@ ALTER TABLE "PurchaseItem" ADD CONSTRAINT "PurchaseItem_productId_fkey" FOREIGN 
 
 -- AddForeignKey
 ALTER TABLE "ExchangeRate" ADD CONSTRAINT "ExchangeRate_businessId_fkey" FOREIGN KEY ("businessId") REFERENCES "Business"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
