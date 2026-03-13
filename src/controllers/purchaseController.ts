@@ -93,8 +93,8 @@ export class PurchaseController {
             // In a real system, you might want to decide if deleting a purchase should revert stock
             // For now, mirroring common patterns of just deleting the record
             await prisma.$transaction([
-                prisma.purchaseItem.deleteMany({ where: { purchaseId: id } }),
-                prisma.purchase.delete({ where: { id } })
+                prisma.purchaseItem.deleteMany({ where: { purchaseId: id as string } }),
+                prisma.purchase.delete({ where: { id: id as string } })
             ]);
 
             return res.status(204).send();

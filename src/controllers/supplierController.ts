@@ -61,7 +61,7 @@ export class SupplierController {
             const { name, contactPerson, email, phone, address } = req.body;
 
             const supplier = await prisma.supplier.update({
-                where: { id },
+                where: { id: id as string },
                 data: {
                     name,
                     contactPerson,
@@ -83,7 +83,7 @@ export class SupplierController {
             const { id } = req.params;
 
             await prisma.supplier.delete({
-                where: { id }
+                where: { id: id as string }
             });
 
             return res.status(204).send();
