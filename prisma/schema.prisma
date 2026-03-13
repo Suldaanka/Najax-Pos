@@ -158,6 +158,9 @@ model Business {
   loans              Loan[]
   invitations        Invitation[]
   categories         Category[]
+  suppliers          Supplier[]
+  purchases          Purchase[]
+  exchangeRates      ExchangeRate[]
 }
 
 model RecurringExpense {
@@ -201,10 +204,12 @@ model Product {
   sellingPrice Decimal
   stockQuantity Int      @default(0)
   lowStockThreshold Int @default(5)
+  unit         String?  @default("pcs")
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
-  saleItems    SaleItem[]
+  saleItems      SaleItem[]
+  purchaseItems  PurchaseItem[]
 
   @@unique([businessId, barcode])
   @@index([businessId])
@@ -252,6 +257,10 @@ model Sale {
   paidAmount    Decimal       @default(0)
   type          SaleType      @default(CASH)
   paymentMethod PaymentMethod @default(CASH)
+  discountPercentage Decimal @default(0)
+  paymentCurrency    String  @default("USD")
+  exchangeRate       Decimal?
+  paidAmountShiling  Decimal?
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @updatedAt
 
@@ -324,4 +333,63 @@ model Expense {
 
   @@index([businessId])
   @@index([userId])
+}
+
+model Supplier {
+  id         String   @id @default(cuid())
+  businessId String
+  business   Business @relation(fields: [businessId], references: [id])
+  name       String
+  contactPerson String?
+  email       String?
+  phone       String?
+  address     String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  purchases  Purchase[]
+
+  @@index([businessId])
+}
+
+model Purchase {
+  id          String   @id @default(cuid())
+  businessId  String
+  business    Business @relation(fields: [businessId], references: [id])
+  supplierId  String
+  supplier    Supplier @relation(fields: [supplierId], references: [id])
+  totalAmount Decimal
+  status      String   @default("COMPLETED")
+  date        DateTime @default(now())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  items       PurchaseItem[]
+
+  @@index([businessId])
+  @@index([supplierId])
+}
+
+model PurchaseItem {
+  id         String   @id @default(cuid())
+  purchaseId String
+  purchase   Purchase @relation(fields: [purchaseId], references: [id])
+  productId  String
+  product    Product  @relation(fields: [productId], references: [id])
+  quantity   Int
+  costPrice  Decimal
+  
+  @@index([purchaseId])
+  @@index([productId])
+}
+
+model ExchangeRate {
+  id         String   @id @default(cuid())
+  businessId String
+  business   Business @relation(fields: [businessId], references: [id])
+  fromCurrency String @default("USD")
+  toCurrency   String @default("SOS")
+  rate         Decimal
+  updatedAt    DateTime @updatedAt
+
+  @@unique([businessId, fromCurrency, toCurrency])
+  @@index([businessId])
 }

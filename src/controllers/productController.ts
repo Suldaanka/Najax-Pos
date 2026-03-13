@@ -22,7 +22,7 @@ export const getProducts = async (req: Request, res: Response) => {
 
 export const createProduct = async (req: Request, res: Response) => {
     try {
-        const { businessId, name, categoryId, costPrice, sellingPrice, stockQuantity, barcode, description, piecesPerCarton } = req.body;
+        const { businessId, name, categoryId, costPrice, sellingPrice, stockQuantity, barcode, description, piecesPerCarton, unit } = req.body;
 
         if (!businessId || !name || costPrice === undefined || sellingPrice === undefined) {
             return res.status(400).json({ error: 'Missing required fields' });
@@ -39,6 +39,7 @@ export const createProduct = async (req: Request, res: Response) => {
                 barcode,
                 description,
                 piecesPerCarton,
+                unit: unit || "pcs",
             },
         });
         res.status(201).json(product);
@@ -52,7 +53,7 @@ export const createProduct = async (req: Request, res: Response) => {
 export const updateProduct = async (req: Request, res: Response) => {
     try {
         const { id } = req.params as { id: string };
-        const { name, categoryId, costPrice, sellingPrice, stockQuantity, barcode, description, piecesPerCarton } = req.body;
+        const { name, categoryId, costPrice, sellingPrice, stockQuantity, barcode, description, piecesPerCarton, unit } = req.body;
 
         const product = await prisma.product.update({
             where: { id },
@@ -65,6 +66,7 @@ export const updateProduct = async (req: Request, res: Response) => {
                 barcode,
                 description,
                 piecesPerCarton,
+                unit,
             },
         });
         res.json(product);

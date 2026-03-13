@@ -5,8 +5,8 @@ import { AuthRequest } from '../middlewares/authMiddleware';
 export class SaleController {
     static async createSale(req: AuthRequest, res: Response) {
         try {
-            const { customerId, totalAmount, paymentMethod, items } = req.body;
-            console.log('Create sale request received:', { customerId, totalAmount, paymentMethod, items_count: items?.length });
+            const { customerId, totalAmount, paymentMethod, items, discountPercentage, paymentCurrency, exchangeRate, paidAmountShiling } = req.body;
+            console.log('Create sale request received:', { customerId, totalAmount, paymentMethod, items_count: items?.length, discountPercentage, paymentCurrency });
 
             const user = await prisma.user.findUnique({
                 where: { id: req.user.id }
@@ -36,6 +36,10 @@ export class SaleController {
                         paidAmount: paymentMethod === 'Loan' ? 0 : totalAmount,
                         type: paymentMethod === 'Loan' ? 'LOAN' : 'CASH',
                         paymentMethod: (methodMapping[paymentMethod] || 'OTHER') as any,
+                        discountPercentage: discountPercentage || 0,
+                        paymentCurrency: paymentCurrency || 'USD',
+                        exchangeRate: exchangeRate,
+                        paidAmountShiling: paidAmountShiling,
                         items: {
                             create: items.map((item: any) => ({
                                 productId: item.productId,

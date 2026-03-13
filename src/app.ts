@@ -17,6 +17,7 @@ import loanRoutes from './routes/loan';
 import saleRoutes from './routes/sale';
 import invitationRoutes from './routes/invitation';
 import dashboardRoutes from './routes/dashboard';
+import inventoryRoutes from './routes/inventory';
 
 const app = express();
 
@@ -53,6 +54,7 @@ app.use('/api/loans', loanRoutes);
 app.use('/api/sales', saleRoutes);
 app.use('/api/invitations', invitationRoutes);
 app.use('/api/dashboard', dashboardRoutes);
+app.use('/api/inventory', inventoryRoutes);
 app.use('/api', authRoutes); // Custom auth routes
 
 app.get('/health', (req, res) => {
