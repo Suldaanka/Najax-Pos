@@ -55,7 +55,8 @@ export class PurchaseController {
                         date: date ? new Date(date) : new Date(),
                         items: {
                             create: items.map((item: any) => ({
-                                productId: item.productId,
+                                productId: item.productId || null,
+                                itemName: item.itemName || null,
                                 quantity: item.quantity,
                                 costPrice: item.costPrice
                             }))
@@ -63,17 +64,19 @@ export class PurchaseController {
                     }
                 });
 
-                // 2. Update product stock and cost price
+                // 2. Update product stock and cost price (only for items with a productId)
                 for (const item of items) {
-                    await tx.product.update({
-                        where: { id: item.productId },
-                        data: {
-                            stockQuantity: {
-                                increment: item.quantity
-                            },
-                            costPrice: item.costPrice // Optionally update cost price to the latest purchase price
-                        }
-                    });
+                    if (item.productId) {
+                        await tx.product.update({
+                            where: { id: item.productId },
+                            data: {
+                                stockQuantity: {
+                                    increment: item.quantity
+                                },
+                                costPrice: item.costPrice
+                            }
+                        });
+                    }
                 }
 
                 return purchase;
