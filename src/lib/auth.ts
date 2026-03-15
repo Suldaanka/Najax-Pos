@@ -37,16 +37,18 @@ export const auth = betterAuth({
         },
     },
     trustedOrigins: [
-        process.env.FRONTEND_URL || "http://localhost:3000",
-        process.env.BETTER_AUTH_URL || "http://localhost:5000",
-        "http://localhost:3000",
-        "http://localhost:5000",
+        process.env.FRONTEND_URL || "https://najax-pos-frontend-production.up.railway.app",
+        process.env.BETTER_AUTH_URL || "https://najax-pos-production.up.railway.app",
         "https://najax-pos-frontend-production.up.railway.app",
         "https://najax-pos-production.up.railway.app",
-        "https://zingy-dasik-cc0f46.netlify.app", // User's actual Netlify production URL
+        "https://zingy-dasik-cc0f46.netlify.app",
         "najaxapp://",
         "exp://",
-        "http://10.0.2.2:5000", // Android Emulator loopback
+        "najaxapp://dashboard",
+        "najaxapp://(tabs)/dashboard",
+        "exp://10.31.76.240:8081",
+        "http://localhost:3000",
+        "http://localhost:5000",
     ],
     advanced: {
         cookiePrefix: "najax",
