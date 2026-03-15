@@ -46,9 +46,9 @@ export const removeStaff = async (req: Request, res: Response) => {
 
 export const getStaffPerformance = async (req: Request, res: Response) => {
     try {
-        const businessId = (req as any).user?.activeBusinessId;
+        const businessId = (req as any).user?.activeBusinessId || req.query.businessId as string;
         if (!businessId) {
-            return res.status(400).json({ error: 'No active business selected' });
+            return res.status(400).json({ error: 'No active business selected or businessId missing' });
         }
 
         const staffMembers = await (prisma as any).businessMember.findMany({

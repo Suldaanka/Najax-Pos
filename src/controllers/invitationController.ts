@@ -330,7 +330,6 @@ export class InvitationController {
         }
     }
 
-    // List pending invitations (Owner only)
     static async listInvitations(req: Request, res: Response) {
         try {
             const session = await auth.api.getSession({
@@ -341,18 +340,16 @@ export class InvitationController {
                 return res.status(401).json({ error: 'Not authenticated' });
             }
 
-            const user = await prisma.user.findUnique({
-                where: { id: session.user.id }
-            });
+            const businessId = req.query.businessId as string || (session.user as any).activeBusinessId;
 
-            if (!user?.activeBusinessId) {
+            if (!businessId) {
                 return res.status(400).json({ error: 'No active business found' });
             }
 
             const membership = await prisma.businessMember.findFirst({
                 where: {
-                    userId: user.id,
-                    businessId: user.activeBusinessId
+                    userId: session.user.id,
+                    businessId: businessId
                 }
             });
 
@@ -362,7 +359,7 @@ export class InvitationController {
 
             const invitations = await prisma.invitation.findMany({
                 where: {
-                    businessId: user.activeBusinessId
+                    businessId: businessId
                 },
                 orderBy: {
                     createdAt: 'desc'

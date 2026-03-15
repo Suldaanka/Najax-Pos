@@ -4,8 +4,8 @@ import { checkAuth } from '../middlewares/authMiddleware';
 
 const router = Router();
 
-router.get('/', getStaff);
 router.get('/performance', checkAuth, getStaffPerformance);
+router.get('/', getStaff);
 router.delete('/:id', removeStaff);
 
 export default router;
