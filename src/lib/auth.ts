@@ -65,5 +65,6 @@ export const auth = betterAuth({
                 input: false,
             }
         }
-    }
+    },
+    debug: true
 });
