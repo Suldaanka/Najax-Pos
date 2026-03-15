@@ -63,6 +63,17 @@ app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/inventory', inventoryRoutes);
 app.use('/api', authRoutes); // Custom auth routes
 
+// Error handling middleware
+app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
+    console.error(`[ERROR] ${new Date().toISOString()} - ${req.method} ${req.path}`);
+    console.error(err);
+    res.status(err.status || 500).json({
+        error: "Internal Server Error",
+        message: err.message,
+        path: req.path
+    });
+});
+
 app.get('/health', (req, res) => {
     res.status(200).json({ status: 'OK', timestamp: new Date() });
 });
