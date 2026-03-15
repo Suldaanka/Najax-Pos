@@ -125,6 +125,7 @@ model Business {
   sales              Sale[]
   subscriptions      Subscription[]
   suppliers          Supplier[]
+  stockLogs          StockLog[]
 }
 
 model RecurringExpense {
@@ -170,10 +171,13 @@ model Product {
   createdAt         DateTime       @default(now())
   updatedAt         DateTime       @updatedAt
   piecesPerBag      Int?
+  wholesalePrice    Decimal?
+  minWholesaleQty   Decimal?       @default(0)
   business          Business       @relation(fields: [businessId], references: [id])
   category          Category?      @relation(fields: [categoryId], references: [id])
   purchaseItems     PurchaseItem[]
   saleItems         SaleItem[]
+  stockLogs         StockLog[]
 
   @@unique([businessId, barcode])
   @@index([businessId])
@@ -198,6 +202,7 @@ model Customer {
   businessId String
   name       String
   phone      String?
+  loyaltyPoints Int      @default(0)
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
   business   Business @relation(fields: [businessId], references: [id])
@@ -386,4 +391,30 @@ enum BusinessType {
   SHOP
   PHARMACY
   COSMETICS
+}
+
+model StockLog {
+  id         String   @id @default(cuid())
+  businessId String
+  productId  String
+  type       StockLogType
+  quantity   Decimal
+  oldStock   Decimal
+  newStock   Decimal
+  note       String?
+  reference  String?  // ID of sale or purchase
+  createdAt  DateTime @default(now())
+  business   Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  product    Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@index([businessId])
+  @@index([productId])
+}
+
+enum StockLogType {
+  SALE
+  PURCHASE
+  RETURN
+  ADJUSTMENT
+  TRANSFER
 }
