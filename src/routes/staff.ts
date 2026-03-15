@@ -1,7 +1,5 @@
 import { Router } from 'express';
 import { getStaff, removeStaff, getStaffPerformance } from '../controllers/staffController';
-import { checkAuth } from '../middlewares/authMiddleware';
-
 import { checkAuth, checkRole } from '../middlewares/authMiddleware';
 
 const router = Router();
