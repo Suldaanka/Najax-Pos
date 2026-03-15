@@ -6,7 +6,7 @@ import { expo } from "@better-auth/expo";
 
 const getBaseURL = () => {
     // The baseURL MUST include the path where Better Auth is mounted (/api/auth)
-    const rawUrl = process.env.BETTER_AUTH_URL || "http://localhost:5000";
+    const rawUrl = process.env.BETTER_AUTH_URL || (process.env.NODE_ENV === "production" ? "https://najax-pos-production.up.railway.app" : "http://localhost:5000");
     return rawUrl.endsWith("/api/auth") ? rawUrl : (rawUrl.endsWith("/") ? `${rawUrl}api/auth` : `${rawUrl}/api/auth`);
 };
 
