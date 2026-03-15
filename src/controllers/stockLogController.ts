@@ -24,7 +24,7 @@ export class StockLogController {
             const logs = await prisma.stockLog.findMany({
                 where: {
                     businessId: user.activeBusinessId,
-                    productId: productId
+                    productId: productId as string
                 },
                 orderBy: {
                     createdAt: 'desc'
