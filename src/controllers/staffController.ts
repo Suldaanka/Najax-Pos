@@ -44,6 +44,54 @@ export const removeStaff = async (req: Request, res: Response) => {
     }
 };
 
-// Invitation logic is already in invitationController.ts,
-// so we might not need to duplicate it here if the frontend can use that.
-// But let's check invitationController.ts first.
+export const getStaffPerformance = async (req: Request, res: Response) => {
+    try {
+        const businessId = (req as any).user?.activeBusinessId;
+        if (!businessId) {
+            return res.status(400).json({ error: 'No active business selected' });
+        }
+
+        const staffMembers = await (prisma as any).businessMember.findMany({
+            where: { businessId: businessId },
+            include: {
+                user: {
+                    select: {
+                        id: true,
+                        name: true,
+                        email: true,
+                    }
+                }
+            }
+        });
+
+        const performance = await Promise.all(staffMembers.map(async (member: any) => {
+            const stats = await prisma.sale.aggregate({
+                where: {
+                    businessId: businessId,
+                    staffId: member.userId
+                },
+                _count: {
+                    id: true
+                },
+                _sum: {
+                    totalAmount: true
+                }
+            });
+
+            return {
+                id: member.id,
+                userId: member.userId,
+                name: member.user.name,
+                email: member.user.email,
+                role: member.role,
+                salesCount: stats._count.id || 0,
+                totalRevenue: stats._sum.totalAmount || 0
+            };
+        }));
+
+        res.json(performance);
+    } catch (error) {
+        console.error('Get staff performance error:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+};

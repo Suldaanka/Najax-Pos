@@ -1,6 +1,7 @@
 import { Response } from 'express';
 import { prisma } from '../lib/prisma';
 import { AuthRequest } from '../middlewares/authMiddleware';
+import { Prisma } from '@prisma/client';
 
 export class PurchaseController {
     static async getPurchases(req: AuthRequest, res: Response) {
@@ -67,15 +68,37 @@ export class PurchaseController {
                 // 2. Update product stock and cost price (only for items with a productId)
                 for (const item of items) {
                     if (item.productId) {
-                        await tx.product.update({
-                            where: { id: item.productId },
-                            data: {
-                                stockQuantity: {
-                                    increment: item.quantity
-                                },
-                                costPrice: item.costPrice
-                            }
+                        const product = await tx.product.findUnique({
+                            where: { id: item.productId }
                         });
+
+                        if (product) {
+                            const oldStock = new Prisma.Decimal(product.stockQuantity);
+                            const newStock = oldStock.plus(item.quantity);
+
+                            // Update stock and cost price
+                            await tx.product.update({
+                                where: { id: item.productId },
+                                data: {
+                                    stockQuantity: newStock,
+                                    costPrice: item.costPrice
+                                }
+                            });
+
+                            // Record log
+                            await tx.stockLog.create({
+                                data: {
+                                    businessId: user.activeBusinessId!,
+                                    productId: item.productId,
+                                    type: 'PURCHASE',
+                                    quantity: item.quantity,
+                                    oldStock: oldStock,
+                                    newStock: newStock,
+                                    reference: purchase.id,
+                                    note: `Purchase from ${purchase.supplierId.slice(-5).toUpperCase()}`
+                                }
+                            });
+                        }
                     }
                 }
 

@@ -4,7 +4,13 @@ import { PurchaseController } from '../controllers/purchaseController';
 import { ExchangeRateController } from '../controllers/exchangeRateController';
 import { checkAuth } from '../middlewares/authMiddleware';
 
+import { StockLogController } from '../controllers/stockLogController';
+
 const router = Router();
+
+// Stock Logs
+router.get('/stock-logs', checkAuth as any, StockLogController.getBusinessLogs as any);
+router.get('/stock-logs/:productId', checkAuth as any, StockLogController.getProductLogs as any);
 
 // Suppliers
 router.get('/suppliers', checkAuth as any, SupplierController.getSuppliers as any);

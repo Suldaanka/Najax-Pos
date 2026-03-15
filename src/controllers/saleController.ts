@@ -1,6 +1,7 @@
 import { Response } from 'express';
 import { prisma } from '../lib/prisma';
 import { AuthRequest } from '../middlewares/authMiddleware';
+import { Prisma } from '@prisma/client';
 
 export class SaleController {
     static async createSale(req: AuthRequest, res: Response) {
@@ -50,19 +51,53 @@ export class SaleController {
                     }
                 });
 
-                // 2. Update product stock
+                // 2. Update product stock and record logs
                 for (const item of items) {
-                    await tx.product.update({
-                        where: { id: item.productId },
+                    const product = await tx.product.findUnique({
+                        where: { id: item.productId }
+                    });
+
+                    if (product) {
+                        const oldStock = new Prisma.Decimal(product.stockQuantity);
+                        const newStock = oldStock.minus(item.quantity);
+
+                        // Update stock
+                        await tx.product.update({
+                            where: { id: item.productId },
+                            data: {
+                                stockQuantity: newStock
+                            }
+                        });
+
+                        // Record log
+                        await tx.stockLog.create({
+                            data: {
+                                businessId: user.activeBusinessId!,
+                                productId: item.productId,
+                                type: 'SALE',
+                                quantity: item.quantity,
+                                oldStock: oldStock,
+                                newStock: newStock,
+                                reference: sale.id,
+                                note: `Sale #${sale.id.slice(-5).toUpperCase()}`
+                            }
+                        });
+                    }
+                }
+
+                // 3. Award loyalty points to customer (1 point per dollar spent)
+                if (customerId && customerId !== 'cash') {
+                    await tx.customer.update({
+                        where: { id: customerId },
                         data: {
-                            stockQuantity: {
-                                decrement: item.quantity
+                            loyaltyPoints: {
+                                increment: Math.floor(totalAmount)
                             }
                         }
                     });
                 }
 
-                // 3. Create or Update loan if payment method is Loan
+                // 4. Create or Update loan if payment method is Loan
                 if (paymentMethod === 'Loan' && customerId != null) {
                     const existingLoan = await tx.loan.findFirst({
                         where: {
