@@ -9,6 +9,8 @@ export interface AuthRequest extends Request {
     session?: any;
 }
 
+import { prisma } from "../lib/prisma";
+
 export const checkAuth = async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
         const session = await auth.api.getSession({
@@ -22,8 +24,21 @@ export const checkAuth = async (req: AuthRequest, res: Response, next: NextFunct
         req.user = session.user;
         req.session = session.session;
 
-        // Optional: Check active business subscription here
-        // if (req.user.businessId) { ... check subscription ... }
+        // Fetch user role for the active business
+        if (req.user.activeBusinessId) {
+            const membership = await prisma.businessMember.findUnique({
+                where: {
+                    userId_businessId: {
+                        userId: req.user.id,
+                        businessId: req.user.activeBusinessId
+                    }
+                }
+            });
+            
+            if (membership) {
+                req.user.role = membership.role;
+            }
+        }
 
         next();
     } catch (error: any) {
