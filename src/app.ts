@@ -21,6 +21,12 @@ import inventoryRoutes from './routes/inventory';
 
 const app = express();
 
+// Request logging
+app.use((req, res, next) => {
+    console.log(`${new Date().toISOString()} - ${req.method} ${req.path}`);
+    next();
+});
+
 // Trust proxy for Railway/Production to handle HTTPS/Cookies correctly
 app.set('trust proxy', true);
 
