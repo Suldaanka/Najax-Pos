@@ -34,6 +34,9 @@ export const auth = betterAuth({
         google: {
             clientId: process.env.GOOGLE_CLIENT_ID || "",
             clientSecret: process.env.GOOGLE_CLIENT_SECRET || "",
+            authorizeQuery: {
+                prompt: "select_account",
+            }
         },
     },
     trustedOrigins: [
@@ -43,6 +46,7 @@ export const auth = betterAuth({
         "https://najax-pos-production.up.railway.app",
         "https://zingy-dasik-cc0f46.netlify.app",
         "najaxapp://",
+        "najaxapp://auth/callback",
         "najaxapp://dashboard",
         "najaxapp://(tabs)/dashboard",
         "exp://",
