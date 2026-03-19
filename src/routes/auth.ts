@@ -27,15 +27,15 @@ router.get("/mobile-callback", async (req, res) => {
         });
 
         if (!session || !session.session) {
-            return res.redirect(`najax://auth/callback?error=no_session`);
+            return res.redirect(`najaxapp://auth/callback?error=no_session`);
         }
 
         // Redirect to app with the session token
         const token = session.session.token;
-        return res.redirect(`najax://auth/callback?token=${token}`);
+        return res.redirect(`najaxapp://auth/callback?token=${token}`);
     } catch (err: any) {
         console.error('Mobile callback error:', err);
-        return res.redirect(`najax://auth/callback?error=${encodeURIComponent(err.message)}`);
+        return res.redirect(`najaxapp://auth/callback?error=${encodeURIComponent(err.message)}`);
     }
 });
 
