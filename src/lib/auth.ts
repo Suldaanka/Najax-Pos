@@ -8,14 +8,14 @@ const getBaseURL = () => {
     // Force backend's own domain for OAuth redirect consistency
     const rawUrl = process.env.BETTER_AUTH_URL || (process.env.NODE_ENV === "production" ? "https://najax-pos-production.up.railway.app" : "http://localhost:5000");
     const baseUrl = rawUrl.endsWith("/api/auth") ? rawUrl : (rawUrl.endsWith("/") ? `${rawUrl}api/auth` : `${rawUrl}/api/auth`);
-    console.log(`[AUTH] Initializing with baseURL: ${baseUrl}`);
+    console.log(`[AUTH] Initializing with baseURL: ${baseUrl} (NODE_ENV: ${process.env.NODE_ENV})`);
     return baseUrl;
 };
 
 export const auth = betterAuth({
     plugins: [expo()],
     baseURL: getBaseURL(),
-    trustHost: true,
+    trustHost: false, // Strict baseURL usage for production consistency
     secret: process.env.BETTER_AUTH_SECRET,
     database: prismaAdapter(prisma, {
         provider: "postgresql",
@@ -58,7 +58,7 @@ export const auth = betterAuth({
     advanced: {
         cookiePrefix: "najax",
         defaultCookieAttributes: {
-            // Must be "none" for cross-domain cookies (Netlify -> Railway)
+            // Must be "none" for cross-subdomain cookies on Railway public suffixes
             sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
             secure: process.env.NODE_ENV === "production",
             httpOnly: true,
