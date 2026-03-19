@@ -5,9 +5,11 @@ import { InvitationService } from "../services/invitationService";
 import { expo } from "@better-auth/expo";
 
 const getBaseURL = () => {
-    // The baseURL MUST include the path where Better Auth is mounted (/api/auth)
+    // Force backend's own domain for OAuth redirect consistency
     const rawUrl = process.env.BETTER_AUTH_URL || (process.env.NODE_ENV === "production" ? "https://najax-pos-production.up.railway.app" : "http://localhost:5000");
-    return rawUrl.endsWith("/api/auth") ? rawUrl : (rawUrl.endsWith("/") ? `${rawUrl}api/auth` : `${rawUrl}/api/auth`);
+    const baseUrl = rawUrl.endsWith("/api/auth") ? rawUrl : (rawUrl.endsWith("/") ? `${rawUrl}api/auth` : `${rawUrl}/api/auth`);
+    console.log(`[AUTH] Initializing with baseURL: ${baseUrl}`);
+    return baseUrl;
 };
 
 export const auth = betterAuth({
@@ -44,7 +46,6 @@ export const auth = betterAuth({
         process.env.BETTER_AUTH_URL || "https://najax-pos-production.up.railway.app",
         "https://najax-pos-frontend-production.up.railway.app",
         "https://najax-pos-production.up.railway.app",
-        "https://zingy-dasik-cc0f46.netlify.app",
         "najaxapp://",
         "najaxapp://auth/callback",
         "najaxapp://dashboard",
