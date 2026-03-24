@@ -15,7 +15,7 @@ const getBaseURL = () => {
 export const auth = betterAuth({
     plugins: [expo()],
     baseURL: getBaseURL(),
-    trustHost: false, // Strict baseURL usage for production consistency
+    trustHost: true, // Allow Railway proxy headers for accurate domain/protocol detection
     secret: process.env.BETTER_AUTH_SECRET,
     database: prismaAdapter(prisma, {
         provider: "postgresql",
@@ -36,6 +36,7 @@ export const auth = betterAuth({
         google: {
             clientId: process.env.GOOGLE_CLIENT_ID || "",
             clientSecret: process.env.GOOGLE_CLIENT_SECRET || "",
+            redirectURI: `${getBaseURL()}/callback/google`,
             authorizeQuery: {
                 prompt: "select_account",
             }
