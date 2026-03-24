@@ -36,6 +36,10 @@ export const auth = betterAuth({
         google: {
             clientId: process.env.GOOGLE_CLIENT_ID || "",
             clientSecret: process.env.GOOGLE_CLIENT_SECRET || "",
+            // Redirect URI must point to the FRONTEND domain (proxied to backend via Next.js rewrites).
+            // This is required because Railway's *.up.railway.app are on the public suffix list —
+            // cookies cannot be shared between subdomains. Everything must flow through one domain.
+            redirectURI: `${process.env.FRONTEND_URL || "https://najax-pos-frontend-production.up.railway.app"}/api/auth/callback/google`,
             authorizeQuery: {
                 prompt: "select_account",
             }
