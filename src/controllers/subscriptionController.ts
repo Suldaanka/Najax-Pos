@@ -28,7 +28,7 @@ export class SubscriptionController {
           amount,
           status: 'INACTIVE',
           paymentStatus: PaymentStatus.PENDING,
-          paymentMethod: gateway.toUpperCase() as PaymentMethod,
+          paymentGateway: gateway.toUpperCase(),
           startDate: new Date(),
           endDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // Default 30 days
         }

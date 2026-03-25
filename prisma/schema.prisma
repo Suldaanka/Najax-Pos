@@ -150,8 +150,8 @@ model Subscription {
   amount     Decimal
   createdAt  DateTime           @default(now())
   updatedAt  DateTime           @updatedAt
-  paymentStatus     PaymentStatus      @default(SUCCESS)
-  paymentMethod     PaymentMethod?
+  paymentStatus       PaymentStatus      @default(SUCCESS)
+  paymentGateway      String?
   sifaloTransactionId String?
   business          Business           @relation(fields: [businessId], references: [id])
 
