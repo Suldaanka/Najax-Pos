@@ -20,6 +20,7 @@ import dashboardRoutes from './routes/dashboard';
 import inventoryRoutes from './routes/inventory';
 import roleRoutes from './routes/role';
 import subscriptionRoutes from './routes/subscription';
+import auditRoutes from './routes/auditRoutes';
 
 const app = express();
 
@@ -65,6 +66,7 @@ app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/inventory', inventoryRoutes);
 app.use('/api/role', roleRoutes);
 app.use('/api/subscriptions', subscriptionRoutes);
+app.use('/api/audit-logs', auditRoutes);
 app.use('/api', authRoutes); // Custom auth routes
 
 // Error handling middleware

@@ -1,5 +1,7 @@
 import { Request, Response } from 'express';
 import { prisma } from '../lib/prisma';
+import { AuditService } from '../services/auditService';
+import { AuditAction } from '@prisma/client';
 
 export const getProducts = async (req: Request, res: Response) => {
     try {
@@ -43,6 +45,16 @@ export const createProduct = async (req: Request, res: Response) => {
                 unit: unit || "pcs",
             },
         });
+        
+        await AuditService.logAction(
+            businessId,
+            (req as any).user.id,
+            AuditAction.CREATE,
+            'PRODUCT',
+            product.id,
+            `Created product: ${name} (Stock: ${product.stockQuantity})`
+        );
+
         res.status(201).json(product);
     } catch (error: any) {
         console.error('Create product error:', error);
@@ -79,6 +91,16 @@ export const updateProduct = async (req: Request, res: Response) => {
                 unit,
             },
         });
+
+        await AuditService.logAction(
+            product.businessId,
+            (req as any).user.id,
+            AuditAction.UPDATE,
+            'PRODUCT',
+            product.id,
+            `Updated product: ${product.name} (Selling Price: ${product.sellingPrice})`
+        );
+
         res.json(product);
     } catch (error) {
         console.error('Update product error:', error);
@@ -89,9 +111,23 @@ export const updateProduct = async (req: Request, res: Response) => {
 export const deleteProduct = async (req: Request, res: Response) => {
     try {
         const { id } = req.params as { id: string };
+        const product = await prisma.product.findUnique({ where: { id } });
+        
         await prisma.product.delete({
             where: { id },
         });
+
+        if (product) {
+            await AuditService.logAction(
+                product.businessId,
+                (req as any).user.id,
+                AuditAction.DELETE,
+                'PRODUCT',
+                product.id,
+                `Deleted product: ${product.name}`
+            );
+        }
+
         res.status(204).send();
     } catch (error) {
         console.error('Delete product error:', error);

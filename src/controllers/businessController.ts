@@ -1,6 +1,8 @@
 import { Request, Response } from 'express';
 import { prisma } from '../lib/prisma';
 import { AuthRequest } from '../middlewares/authMiddleware';
+import { AuditService } from '../services/auditService';
+import { AuditAction } from '@prisma/client';
 
 export class BusinessController {
     // Create a new business (onboarding)
@@ -324,6 +326,15 @@ export class BusinessController {
                 data: { role: role as any }
             });
 
+            await AuditService.logAction(
+                currentUser.activeBusinessId,
+                userId,
+                AuditAction.UPDATE,
+                'STAFF',
+                targetMembership.user.id,
+                `Changed role of ${targetMembership.user.name} to ${role}`
+            );
+
             return res.json({
                 message: 'User role updated successfully',
                 user: {
@@ -403,6 +414,15 @@ export class BusinessController {
                     data: { activeBusinessId: null }
                 });
             }
+
+            await AuditService.logAction(
+                currentUser.activeBusinessId,
+                userId,
+                AuditAction.DELETE,
+                'STAFF',
+                targetMembership.user.id,
+                `Removed staff member ${targetMembership.user.name} from the business`
+            );
 
             return res.json({ message: 'User removed from business successfully' });
         } catch (error) {

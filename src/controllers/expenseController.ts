@@ -1,6 +1,8 @@
 import { Request, Response } from 'express';
 import { prisma } from '../lib/prisma';
 import { AuthRequest } from '../middlewares/authMiddleware';
+import { AuditService } from '../services/auditService';
+import { AuditAction } from '@prisma/client';
 
 export const getExpenses = async (req: AuthRequest, res: Response) => {
     try {
@@ -45,6 +47,16 @@ export const createExpense = async (req: AuthRequest, res: Response) => {
                 date: date ? new Date(date) : new Date(),
             },
         });
+
+        await AuditService.logAction(
+            businessId,
+            (req as any).user.id,
+            AuditAction.CREATE,
+            'EXPENSE',
+            expense.id,
+            `Created expense of $${amount} for ${category || 'General'}`
+        );
+
         res.status(201).json(expense);
     } catch (error) {
         console.error('Create expense error:', error);
@@ -66,6 +78,16 @@ export const updateExpense = async (req: AuthRequest, res: Response) => {
                 date: date ? new Date(date) : undefined,
             },
         });
+
+        await AuditService.logAction(
+            expense.businessId,
+            (req as any).user.id,
+            AuditAction.UPDATE,
+            'EXPENSE',
+            expense.id,
+            `Updated expense $${amount} for ${category || 'General'}`
+        );
+
         res.json(expense);
     } catch (error) {
         console.error('Update expense error:', error);
@@ -76,9 +98,23 @@ export const updateExpense = async (req: AuthRequest, res: Response) => {
 export const deleteExpense = async (req: AuthRequest, res: Response) => {
     try {
         const { id } = req.params as { id: string };
+        const expense = await prisma.expense.findUnique({ where: { id } });
+
+        if (!expense) return res.status(404).json({ error: 'Expense not found' });
+
         await prisma.expense.delete({
             where: { id },
         });
+
+        await AuditService.logAction(
+            expense.businessId,
+            (req as any).user.id,
+            AuditAction.DELETE,
+            'EXPENSE',
+            expense.id,
+            `Deleted expense of $${expense.amount}`
+        );
+
         res.status(204).send();
     } catch (error) {
         console.error('Delete expense error:', error);

@@ -22,6 +22,7 @@ model User {
   expenses         Expense[]
   sales            Sale[]
   sessions         Session[]
+  auditLogs        AuditLog[]
 
   @@index([activeBusinessId])
 }
@@ -31,14 +32,17 @@ model BusinessMember {
   userId     String
   businessId String
   role       Role     @default(STAFF)
+  branchId   String?
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
   business   Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
   user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  branch     Branch?  @relation(fields: [branchId], references: [id], onDelete: SetNull)
 
   @@unique([userId, businessId])
   @@index([userId])
   @@index([businessId])
+  @@index([branchId])
 }
 
 model Session {
@@ -126,6 +130,8 @@ model Business {
   subscriptions      Subscription[]
   suppliers          Supplier[]
   stockLogs          StockLog[]
+  branches           Branch[]
+  auditLogs          AuditLog[]
 }
 
 model RecurringExpense {
@@ -141,19 +147,19 @@ model RecurringExpense {
 }
 
 model Subscription {
-  id         String             @id @default(cuid())
-  businessId String
-  plan       String
-  startDate  DateTime           @default(now())
-  endDate    DateTime
-  status     SubscriptionStatus @default(ACTIVE)
-  amount     Decimal
-  createdAt  DateTime           @default(now())
-  updatedAt  DateTime           @updatedAt
+  id                  String             @id @default(cuid())
+  businessId          String
+  plan                String
+  startDate           DateTime           @default(now())
+  endDate             DateTime
+  status              SubscriptionStatus @default(ACTIVE)
+  amount              Decimal
+  createdAt           DateTime           @default(now())
+  updatedAt           DateTime           @updatedAt
   paymentStatus       PaymentStatus      @default(SUCCESS)
   paymentGateway      String?
   sifaloTransactionId String?
-  business          Business           @relation(fields: [businessId], references: [id])
+  business            Business           @relation(fields: [businessId], references: [id])
 
   @@index([businessId])
 }
@@ -165,7 +171,7 @@ enum PaymentStatus {
 }
 
 model Product {
-  id                String         @id @default(cuid())
+  id                String           @id @default(cuid())
   businessId        String
   name              String
   categoryId        String?
@@ -174,19 +180,20 @@ model Product {
   piecesPerCarton   Int?
   costPrice         Decimal
   sellingPrice      Decimal
-  stockQuantity     Decimal        @default(0)
-  lowStockThreshold Int            @default(5)
-  unit              String?        @default("pcs")
-  createdAt         DateTime       @default(now())
-  updatedAt         DateTime       @updatedAt
+  stockQuantity     Decimal          @default(0)
+  lowStockThreshold Int              @default(5)
+  unit              String?          @default("pcs")
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
   piecesPerBag      Int?
   wholesalePrice    Decimal?
-  minWholesaleQty   Decimal?       @default(0)
-  business          Business       @relation(fields: [businessId], references: [id])
-  category          Category?      @relation(fields: [categoryId], references: [id])
+  minWholesaleQty   Decimal?         @default(0)
+  business          Business         @relation(fields: [businessId], references: [id])
+  category          Category?        @relation(fields: [categoryId], references: [id])
   purchaseItems     PurchaseItem[]
   saleItems         SaleItem[]
   stockLogs         StockLog[]
+  inventoryLevels   InventoryLevel[]
 
   @@unique([businessId, barcode])
   @@index([businessId])
@@ -207,23 +214,27 @@ model Category {
 }
 
 model Customer {
-  id         String   @id @default(cuid())
-  businessId String
-  name       String
-  phone      String?
+  id            String   @id @default(cuid())
+  businessId    String
+  branchId      String?
+  name          String
+  phone         String?
   loyaltyPoints Int      @default(0)
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
-  business   Business @relation(fields: [businessId], references: [id])
-  loans      Loan[]
-  sales      Sale[]
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  business      Business @relation(fields: [businessId], references: [id])
+  branch        Branch?  @relation(fields: [branchId], references: [id])
+  loans         Loan[]
+  sales         Sale[]
 
   @@index([businessId])
+  @@index([branchId])
 }
 
 model Sale {
   id                 String        @id @default(cuid())
   businessId         String
+  branchId           String?
   staffId            String?
   customerId         String?
   totalAmount        Decimal
@@ -238,6 +249,7 @@ model Sale {
   updatedAt          DateTime      @updatedAt
   loan               Loan?
   business           Business      @relation(fields: [businessId], references: [id])
+  branch             Branch?       @relation(fields: [branchId], references: [id])
   customer           Customer?     @relation(fields: [customerId], references: [id])
   staff              User?         @relation(fields: [staffId], references: [id])
   items              SaleItem[]
@@ -245,6 +257,7 @@ model Sale {
   @@index([businessId])
   @@index([staffId])
   @@index([customerId])
+  @@index([branchId])
 }
 
 model SaleItem {
@@ -296,6 +309,7 @@ model LoanItem {
 model Expense {
   id          String   @id @default(cuid())
   businessId  String
+  branchId    String?
   userId      String
   amount      Decimal
   description String
@@ -303,10 +317,12 @@ model Expense {
   date        DateTime @default(now())
   createdAt   DateTime @default(now())
   business    Business @relation(fields: [businessId], references: [id])
+  branch      Branch?  @relation(fields: [branchId], references: [id])
   user        User     @relation(fields: [userId], references: [id])
 
   @@index([businessId])
   @@index([userId])
+  @@index([branchId])
 }
 
 model Supplier {
@@ -328,6 +344,7 @@ model Supplier {
 model Purchase {
   id          String         @id @default(cuid())
   businessId  String
+  branchId    String?
   supplierId  String
   totalAmount Decimal
   status      String         @default("COMPLETED")
@@ -335,11 +352,13 @@ model Purchase {
   createdAt   DateTime       @default(now())
   updatedAt   DateTime       @updatedAt
   business    Business       @relation(fields: [businessId], references: [id])
+  branch      Branch?        @relation(fields: [branchId], references: [id])
   supplier    Supplier       @relation(fields: [supplierId], references: [id])
   items       PurchaseItem[]
 
   @@index([businessId])
   @@index([supplierId])
+  @@index([branchId])
 }
 
 model PurchaseItem {
@@ -405,21 +424,24 @@ enum BusinessType {
 }
 
 model StockLog {
-  id         String   @id @default(cuid())
+  id         String       @id @default(cuid())
   businessId String
+  branchId   String?
   productId  String
   type       StockLogType
   quantity   Decimal
   oldStock   Decimal
   newStock   Decimal
   note       String?
-  reference  String?  // ID of sale or purchase
-  createdAt  DateTime @default(now())
-  business   Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
-  product    Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  reference  String? // ID of sale or purchase
+  createdAt  DateTime     @default(now())
+  business   Business     @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  branch     Branch?      @relation(fields: [branchId], references: [id])
+  product    Product      @relation(fields: [productId], references: [id], onDelete: Cascade)
 
   @@index([businessId])
   @@index([productId])
+  @@index([branchId])
 }
 
 enum StockLogType {
@@ -428,4 +450,63 @@ enum StockLogType {
   RETURN
   ADJUSTMENT
   TRANSFER
+}
+
+model Branch {
+  id         String   @id @default(cuid())
+  businessId String
+  name       String
+  address    String?
+  phone      String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  isMain     Boolean  @default(false)
+
+  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  inventoryLevels InventoryLevel[]
+  sales           Sale[]
+  purchases       Purchase[]
+  expenses        Expense[]
+  stockLogs       StockLog[]
+  staff           BusinessMember[]
+  customers       Customer[]
+
+  @@index([businessId])
+}
+
+model InventoryLevel {
+  id            String  @id @default(cuid())
+  productId     String
+  branchId      String
+  stockQuantity Decimal @default(0)
+
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  branch  Branch  @relation(fields: [branchId], references: [id], onDelete: Cascade)
+
+  @@unique([productId, branchId])
+  @@index([branchId])
+}
+
+model AuditLog {
+  id         String      @id @default(cuid())
+  businessId String
+  userId     String
+  action     AuditAction
+  entity     String // e.g., "PRODUCT", "SALE", "STAFF"
+  entityId   String? // ID of the modified record
+  details    String? // JSON string
+  createdAt  DateTime    @default(now())
+
+  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([businessId])
+  @@index([userId])
+}
+
+enum AuditAction {
+  CREATE
+  UPDATE
+  DELETE
 }

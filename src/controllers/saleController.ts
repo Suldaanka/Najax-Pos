@@ -1,7 +1,8 @@
 import { Response } from 'express';
 import { prisma } from '../lib/prisma';
 import { AuthRequest } from '../middlewares/authMiddleware';
-import { Prisma } from '@prisma/client';
+import { Prisma, AuditAction } from '@prisma/client';
+import { AuditService } from '../services/auditService';
 
 export class SaleController {
     static async createSale(req: AuthRequest, res: Response) {
@@ -148,6 +149,16 @@ export class SaleController {
             });
 
             console.log('Sale created successfully:', result.id);
+
+            await AuditService.logAction(
+                user.activeBusinessId!,
+                req.user.id,
+                AuditAction.CREATE,
+                'SALE',
+                result.id,
+                `Created sale for $${totalAmount} via ${paymentMethod}`
+            );
+
             return res.status(201).json(result);
         } catch (error) {
             console.error('Create sale error details:', error);
@@ -197,6 +208,12 @@ export class SaleController {
     static async deleteSale(req: AuthRequest, res: Response) {
         try {
             const id = req.params.id as string;
+            
+            const sale = await prisma.sale.findUnique({
+                 where: { id }
+            });
+
+            if (!sale) return res.status(404).json({ error: 'Sale not found' });
 
             // Delete associated sale items first
             await prisma.saleItem.deleteMany({
@@ -206,6 +223,15 @@ export class SaleController {
             await prisma.sale.delete({
                 where: { id }
             });
+
+            await AuditService.logAction(
+                sale.businessId,
+                req.user.id,
+                AuditAction.DELETE,
+                'SALE',
+                sale.id,
+                `Deleted sale of $${sale.totalAmount}`
+            );
 
             return res.status(204).send();
         } catch (error) {
