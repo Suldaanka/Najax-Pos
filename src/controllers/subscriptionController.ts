@@ -77,12 +77,13 @@ export class SubscriptionController {
           where: { id: subscription.id },
           data: { paymentStatus: PaymentStatus.FAILED }
         });
-        return res.status(500).json({ error: 'Payment gateway error', detail: payError.message });
+        const errorMessage = payError.response?.data?.message || payError.message;
+        return res.status(500).json({ error: 'Payment gateway error', message: errorMessage });
       }
 
     } catch (error: any) {
       console.error('Subscription Initiation Error:', error);
-      res.status(500).json({ error: 'Internal server error' });
+      res.status(500).json({ error: 'Internal server error', message: error.message });
     }
   }
 
