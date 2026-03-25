@@ -150,9 +150,18 @@ model Subscription {
   amount     Decimal
   createdAt  DateTime           @default(now())
   updatedAt  DateTime           @updatedAt
-  business   Business           @relation(fields: [businessId], references: [id])
+  paymentStatus     PaymentStatus      @default(SUCCESS)
+  paymentMethod     PaymentMethod?
+  sifaloTransactionId String?
+  business          Business           @relation(fields: [businessId], references: [id])
 
   @@index([businessId])
+}
+
+enum PaymentStatus {
+  SUCCESS
+  PENDING
+  FAILED
 }
 
 model Product {

@@ -18,6 +18,8 @@ import saleRoutes from './routes/sale';
 import invitationRoutes from './routes/invitation';
 import dashboardRoutes from './routes/dashboard';
 import inventoryRoutes from './routes/inventory';
+import roleRoutes from './routes/role';
+import subscriptionRoutes from './routes/subscription';
 
 const app = express();
 
@@ -61,6 +63,8 @@ app.use('/api/sales', saleRoutes);
 app.use('/api/invitations', invitationRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/inventory', inventoryRoutes);
+app.use('/api/role', roleRoutes);
+app.use('/api/subscriptions', subscriptionRoutes);
 app.use('/api', authRoutes); // Custom auth routes
 
 // Error handling middleware
