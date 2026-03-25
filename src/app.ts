@@ -46,7 +46,7 @@ app.use(cors({
 }));
 
 // Better Auth handler MUST be mounted before express.json()
-app.all('/api/auth/:path*', toNodeHandler(auth));
+app.all('/api/auth/(.*)', toNodeHandler(auth));
 
 app.use(helmet());
 app.use(express.json());
