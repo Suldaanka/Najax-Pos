@@ -50,7 +50,8 @@ class EmailService {
 
     // Password Reset Email
     async sendPasswordResetEmail(email: string, resetToken: string): Promise<void> {
-        const resetUrl = `${process.env.BETTER_AUTH_URL}/reset-password?token=${resetToken}`;
+        const frontendUrl = process.env.FRONTEND_URL || 'https://najax-pos-frontend-production.up.railway.app';
+        const resetUrl = `${frontendUrl}/reset-password?token=${resetToken}`;
 
         const html = `
             <!DOCTYPE html>

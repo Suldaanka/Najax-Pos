@@ -2,6 +2,7 @@ import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 import { prisma } from "./prisma";
 import { InvitationService } from "../services/invitationService";
+import { emailService } from "../services/emailService";
 import { expo } from "@better-auth/expo";
 
 const getBaseURL = () => {
@@ -31,6 +32,9 @@ export const auth = betterAuth({
     },
     emailAndPassword: {
         enabled: true,
+        async sendResetPassword(data, request) {
+            await emailService.sendPasswordResetEmail(data.user.email, data.token);
+        },
     },
     socialProviders: {
         google: {
