@@ -393,6 +393,8 @@ enum PaymentMethod {
   EDAHAB
   EVC
   SAHAL
+  WAAFI
+  PBWALLET
   OTHER
 }
 
