@@ -166,8 +166,7 @@ export class InvitationController {
                     await prisma.user.update({
                         where: { id: targetUser.id },
                         data: { 
-                            activeBusinessId: business.id,
-                            branchId: branchId || null
+                            activeBusinessId: business.id
                         }
                     });
                     console.log(`[Auto-Link] User ${targetUser.id} activeBusinessId ensured as ${business.id}`);
