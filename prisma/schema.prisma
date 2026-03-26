@@ -92,6 +92,7 @@ model Invitation {
   id         String   @id @default(cuid())
   email      String
   businessId String
+  branchId   String?
   role       Role     @default(STAFF)
   token      String   @unique
   status     String   @default("PENDING")
@@ -100,9 +101,11 @@ model Invitation {
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
   business   Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  branch     Branch?  @relation(fields: [branchId], references: [id], onDelete: SetNull)
 
   @@index([businessId])
   @@index([email])
+  @@index([branchId])
 }
 
 model Business {
@@ -476,6 +479,7 @@ model Branch {
   staff           BusinessMember[]
   customers       Customer[]
   refunds         Refund[]
+  invitations     Invitation[]
 
   @@index([businessId])
 }
