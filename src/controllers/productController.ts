@@ -12,7 +12,12 @@ export const getProducts = async (req: Request, res: Response) => {
 
         const products = await prisma.product.findMany({
             where: { businessId: businessId },
-            include: { category: true },
+            include: { 
+                category: true,
+                inventoryLevels: {
+                    include: { branch: true }
+                }
+             },
             orderBy: { createdAt: 'desc' }
         });
         res.json(products);
@@ -24,26 +29,49 @@ export const getProducts = async (req: Request, res: Response) => {
 
 export const createProduct = async (req: Request, res: Response) => {
     try {
-        const { businessId, name, categoryId, costPrice, sellingPrice, stockQuantity, barcode, description, piecesPerCarton, piecesPerBag, unit } = req.body;
+        const { businessId, name, categoryId, costPrice, sellingPrice, stockQuantity, barcode, description, piecesPerCarton, piecesPerBag, unit, branchId } = req.body;
 
         if (!businessId || !name || costPrice === undefined || sellingPrice === undefined) {
             return res.status(400).json({ error: 'Missing required fields' });
         }
 
-        const product = await prisma.product.create({
-            data: {
-                businessId,
-                name,
-                categoryId: categoryId || null,
-                costPrice,
-                sellingPrice,
-                stockQuantity: stockQuantity || 0,
-                barcode: barcode || null,
-                description,
-                piecesPerCarton: piecesPerCarton || null,
-                piecesPerBag: piecesPerBag || null,
-                unit: unit || "pcs",
-            },
+        const product = await prisma.$transaction(async (tx) => {
+            const newProduct = await tx.product.create({
+                data: {
+                    businessId,
+                    name,
+                    categoryId: categoryId || null,
+                    costPrice,
+                    sellingPrice,
+                    stockQuantity: stockQuantity || 0,
+                    barcode: barcode || null,
+                    description,
+                    piecesPerCarton: piecesPerCarton || null,
+                    piecesPerBag: piecesPerBag || null,
+                    unit: unit || "pcs",
+                },
+            });
+
+            // Initialize inventory level for the specified branch OR the main branch
+            let targetBranchId = branchId;
+            if (!targetBranchId) {
+                const mainBranch = await tx.branch.findFirst({
+                    where: { businessId, isMain: true }
+                });
+                targetBranchId = mainBranch?.id;
+            }
+
+            if (targetBranchId) {
+                await tx.inventoryLevel.create({
+                    data: {
+                        productId: newProduct.id,
+                        branchId: targetBranchId,
+                        stockQuantity: stockQuantity || 0
+                    }
+                });
+            }
+
+            return newProduct;
         });
         
         await AuditService.logAction(
@@ -52,21 +80,12 @@ export const createProduct = async (req: Request, res: Response) => {
             AuditAction.CREATE,
             'PRODUCT',
             product.id,
-            `Created product: ${name} (Stock: ${product.stockQuantity})`
+            `Created product: ${name} (Initial Branch Stock: ${stockQuantity || 0})`
         );
 
         res.status(201).json(product);
     } catch (error: any) {
         console.error('Create product error:', error);
-        // Better error logging for debugging
-        const errorDetails = {
-            message: error.message,
-            code: error.code,
-            meta: error.meta,
-            stack: error.stack
-        };
-        console.error('Full Error Details:', JSON.stringify(errorDetails, null, 2));
-        require('fs').writeFileSync('backend-debug.log', JSON.stringify(errorDetails, null, 2));
         res.status(500).json({ error: 'Internal server error', details: error.message });
     }
 };

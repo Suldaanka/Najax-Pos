@@ -23,6 +23,7 @@ model User {
   sales            Sale[]
   sessions         Session[]
   auditLogs        AuditLog[]
+  refunds          Refund[]
 
   @@index([activeBusinessId])
 }
@@ -132,6 +133,7 @@ model Business {
   stockLogs          StockLog[]
   branches           Branch[]
   auditLogs          AuditLog[]
+  refunds            Refund[]
 }
 
 model RecurringExpense {
@@ -194,6 +196,7 @@ model Product {
   saleItems         SaleItem[]
   stockLogs         StockLog[]
   inventoryLevels   InventoryLevel[]
+  refundItems       RefundItem[]
 
   @@unique([businessId, barcode])
   @@index([businessId])
@@ -253,6 +256,7 @@ model Sale {
   customer           Customer?     @relation(fields: [customerId], references: [id])
   staff              User?         @relation(fields: [staffId], references: [id])
   items              SaleItem[]
+  refunds            Refund[]
 
   @@index([businessId])
   @@index([staffId])
@@ -471,6 +475,7 @@ model Branch {
   stockLogs       StockLog[]
   staff           BusinessMember[]
   customers       Customer[]
+  refunds         Refund[]
 
   @@index([businessId])
 }
@@ -509,4 +514,40 @@ enum AuditAction {
   CREATE
   UPDATE
   DELETE
+}
+
+model Refund {
+  id          String   @id @default(cuid())
+  businessId  String
+  branchId    String?
+  saleId      String
+  staffId     String?
+  totalAmount Decimal
+  reason      String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  business Business     @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  branch   Branch?      @relation(fields: [branchId], references: [id], onDelete: SetNull)
+  sale     Sale         @relation(fields: [saleId], references: [id], onDelete: Cascade)
+  staff    User?        @relation(fields: [staffId], references: [id], onDelete: SetNull)
+  items    RefundItem[]
+
+  @@index([businessId])
+  @@index([saleId])
+  @@index([branchId])
+}
+
+model RefundItem {
+  id        String  @id @default(cuid())
+  refundId  String
+  productId String
+  quantity  Decimal
+  amount    Decimal
+
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  refund  Refund  @relation(fields: [refundId], references: [id], onDelete: Cascade)
+
+  @@index([refundId])
+  @@index([productId])
 }

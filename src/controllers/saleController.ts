@@ -7,16 +7,24 @@ import { AuditService } from '../services/auditService';
 export class SaleController {
     static async createSale(req: AuthRequest, res: Response) {
         try {
-            const { customerId, totalAmount, paymentMethod, items, discountPercentage, paymentCurrency, exchangeRate, paidAmountShiling } = req.body;
-            console.log('Create sale request received:', { customerId, totalAmount, paymentMethod, items_count: items?.length, discountPercentage, paymentCurrency });
+            const { customerId, totalAmount, paymentMethod, items, discountPercentage, paymentCurrency, exchangeRate, paidAmountShiling, branchId } = req.body;
+            console.log('Create sale request received:', { customerId, totalAmount, paymentMethod, items_count: items?.length, branchId });
 
             const user = await prisma.user.findUnique({
                 where: { id: req.user.id }
             });
 
             if (!user?.activeBusinessId) {
-                console.log('No active business selected for user:', req.user.id);
                 return res.status(400).json({ error: 'No active business selected' });
+            }
+
+            // Fallback to main branch if none provided (legacy support)
+            let targetBranchId = branchId;
+            if (!targetBranchId) {
+                const mainBranch = await prisma.branch.findFirst({
+                    where: { businessId: user.activeBusinessId, isMain: true }
+                });
+                targetBranchId = mainBranch?.id;
             }
 
             const methodMapping: Record<string, string> = {
@@ -26,12 +34,12 @@ export class SaleController {
                 "Loan": "OTHER"
             };
 
-            console.log('Starting transaction for sale creation...');
             const result = await prisma.$transaction(async (tx) => {
                 // 1. Create the sale
                 const sale = await tx.sale.create({
                     data: {
                         businessId: user.activeBusinessId!,
+                        branchId: targetBranchId,
                         staffId: user.id,
                         customerId: customerId === 'cash' ? null : customerId,
                         totalAmount,
@@ -52,37 +60,66 @@ export class SaleController {
                     }
                 });
 
-                // 2. Update product stock and record logs
+                // 2. Update branch-specific inventory and record logs
                 for (const item of items) {
-                    const product = await tx.product.findUnique({
-                        where: { id: item.productId }
-                    });
+                    if (targetBranchId) {
+                        // Multi-branch inventory logic
+                        const inventory = await tx.inventoryLevel.findUnique({
+                            where: { productId_branchId: { productId: item.productId, branchId: targetBranchId } }
+                        });
 
-                    if (product) {
-                        const oldStock = new Prisma.Decimal(product.stockQuantity);
+                        const oldStock = inventory ? inventory.stockQuantity : new Prisma.Decimal(0);
                         const newStock = oldStock.minus(item.quantity);
 
-                        // Update stock
-                        await tx.product.update({
-                            where: { id: item.productId },
-                            data: {
+                        // Update or Create inventory level
+                        await tx.inventoryLevel.upsert({
+                            where: { productId_branchId: { productId: item.productId, branchId: targetBranchId } },
+                            create: {
+                                productId: item.productId,
+                                branchId: targetBranchId,
+                                stockQuantity: newStock
+                            },
+                            update: {
                                 stockQuantity: newStock
                             }
                         });
 
-                        // Record log
+                        // Record log with branchId
                         await tx.stockLog.create({
                             data: {
                                 businessId: user.activeBusinessId!,
+                                branchId: targetBranchId,
                                 productId: item.productId,
                                 type: 'SALE',
                                 quantity: item.quantity,
                                 oldStock: oldStock,
                                 newStock: newStock,
                                 reference: sale.id,
-                                note: `Sale #${sale.id.slice(-5).toUpperCase()}`
+                                note: `Sale #${sale.id.slice(-5).toUpperCase()} at Branch ${targetBranchId}`
                             }
                         });
+                    } else {
+                        // Legacy global inventory logic
+                        const product = await tx.product.findUnique({ where: { id: item.productId } });
+                        if (product) {
+                            const oldStock = new Prisma.Decimal(product.stockQuantity);
+                            const newStock = oldStock.minus(item.quantity);
+                            await tx.product.update({
+                                where: { id: item.productId },
+                                data: { stockQuantity: newStock }
+                            });
+                            await tx.stockLog.create({
+                                data: {
+                                    businessId: user.activeBusinessId!,
+                                    productId: item.productId,
+                                    type: 'SALE',
+                                    quantity: item.quantity,
+                                    oldStock,
+                                    newStock,
+                                    reference: sale.id
+                                }
+                            });
+                        }
                     }
                 }
 
