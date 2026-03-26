@@ -6,13 +6,16 @@ import { AuditAction } from '@prisma/client';
 
 export const getExpenses = async (req: AuthRequest, res: Response) => {
     try {
-        const businessId = req.query.businessId as string;
+        const { businessId, branchId } = req.query as { businessId: string, branchId?: string };
         if (!businessId) {
             return res.status(400).json({ error: 'businessId is required' });
         }
 
+        const where: any = { businessId };
+        if (branchId) where.branchId = branchId;
+
         const expenses = await prisma.expense.findMany({
-            where: { businessId: businessId },
+            where,
             include: {
                 user: {
                     select: {
@@ -31,7 +34,7 @@ export const getExpenses = async (req: AuthRequest, res: Response) => {
 
 export const createExpense = async (req: AuthRequest, res: Response) => {
     try {
-        const { businessId, userId, amount, description, category, date } = req.body;
+        const { businessId, userId, amount, description, category, date, branchId } = req.body;
 
         if (!businessId || !userId || amount === undefined || !description) {
             return res.status(400).json({ error: 'Missing required fields' });
@@ -45,6 +48,7 @@ export const createExpense = async (req: AuthRequest, res: Response) => {
                 description,
                 category,
                 date: date ? new Date(date) : new Date(),
+                branchId,
             },
         });
 

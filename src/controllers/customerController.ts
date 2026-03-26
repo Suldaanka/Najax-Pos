@@ -4,13 +4,16 @@ import { AuthRequest } from '../middlewares/authMiddleware';
 
 export const getCustomers = async (req: AuthRequest, res: Response) => {
     try {
-        const { businessId } = req.query;
+        const { businessId, branchId } = req.query as { businessId: string, branchId?: string };
         if (!businessId) {
             return res.status(400).json({ error: 'businessId is required' });
         }
 
+        const where: any = { businessId };
+        if (branchId) where.branchId = branchId;
+
         const customers = await prisma.customer.findMany({
-            where: { businessId: businessId as string },
+            where,
             orderBy: { name: 'asc' }
         });
         res.json(customers);
@@ -40,7 +43,7 @@ export const getCustomer = async (req: AuthRequest, res: Response) => {
 
 export const createCustomer = async (req: AuthRequest, res: Response) => {
     try {
-        const { businessId, name, phone } = req.body;
+        const { businessId, name, phone, branchId } = req.body;
 
         if (!businessId || !name) {
             return res.status(400).json({ error: 'Missing required fields' });
@@ -51,6 +54,7 @@ export const createCustomer = async (req: AuthRequest, res: Response) => {
                 businessId,
                 name,
                 phone,
+                branchId,
             },
         });
         res.status(201).json(customer);

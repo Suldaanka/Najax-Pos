@@ -6,7 +6,7 @@ export class LoanController {
     // Create or aggregate a loan
     static async createLoan(req: AuthRequest, res: Response) {
         try {
-            const { customerId, totalAmount, dueDate, saleId, note } = req.body;
+            const { customerId, totalAmount, dueDate, saleId, note, branchId } = req.body;
             const user = await prisma.user.findUnique({
                 where: { id: req.user.id }
             });
@@ -15,10 +15,20 @@ export class LoanController {
                 return res.status(400).json({ error: 'No active business selected' });
             }
 
-            // Check if there is an existing active loan for this customer
+            // Use provided branchId or fallback to main branch
+            let targetBranchId = branchId;
+            if (!targetBranchId) {
+                const mainBranch = await prisma.branch.findFirst({
+                    where: { businessId: user.activeBusinessId, isMain: true }
+                });
+                targetBranchId = mainBranch?.id;
+            }
+
+            // Check if there is an existing active loan for this customer and branch
             const existingLoan = await prisma.loan.findFirst({
                 where: {
                     businessId: user.activeBusinessId,
+                    branchId: targetBranchId,
                     customerId,
                     status: { in: ['PENDING', 'PARTIAL'] }
                 }
@@ -49,6 +59,7 @@ export class LoanController {
             const loan = await prisma.loan.create({
                 data: {
                     businessId: user.activeBusinessId,
+                    branchId: targetBranchId,
                     customerId,
                     totalAmount,
                     paidAmount: 0,
@@ -76,6 +87,7 @@ export class LoanController {
     // Get all loans for the active business
     static async getLoans(req: AuthRequest, res: Response) {
         try {
+            const { branchId } = req.query as { branchId?: string };
             const user = await prisma.user.findUnique({
                 where: { id: req.user.id }
             });
@@ -84,8 +96,13 @@ export class LoanController {
                 return res.status(400).json({ error: 'No active business selected' });
             }
 
+            const where: any = { businessId: user.activeBusinessId };
+            if (branchId) {
+                where.branchId = branchId;
+            }
+
             const loans = await prisma.loan.findMany({
-                where: { businessId: user.activeBusinessId },
+                where,
                 include: {
                     customer: true,
                     items: true,

@@ -344,9 +344,10 @@ export class InvitationController {
                 return res.status(401).json({ error: 'Not authenticated' });
             }
 
-            const businessId = req.query.businessId as string || (session.user as any).activeBusinessId;
+            const { businessId, branchId } = req.query as { businessId?: string, branchId?: string };
+            const activeBusinessId = businessId || (session.user as any).activeBusinessId;
 
-            if (!businessId) {
+            if (!activeBusinessId) {
                 return res.status(400).json({ error: 'No active business found' });
             }
 
@@ -361,10 +362,13 @@ export class InvitationController {
                 return res.status(403).json({ error: 'Only business owners can view invitations' });
             }
 
+            const where: any = { businessId: activeBusinessId };
+            if (branchId) {
+                where.branchId = branchId;
+            }
+
             const invitations = await prisma.invitation.findMany({
-                where: {
-                    businessId: businessId
-                },
+                where,
                 orderBy: {
                     createdAt: 'desc'
                 },

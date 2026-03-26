@@ -3,13 +3,16 @@ import { prisma } from '../lib/prisma';
 
 export const getStaff = async (req: Request, res: Response) => {
     try {
-        const businessId = req.query.businessId as string;
+        const { businessId, branchId } = req.query as { businessId: string, branchId?: string };
         if (!businessId) {
             return res.status(400).json({ error: 'businessId is required' });
         }
 
+        const where: any = { businessId };
+        if (branchId) where.branchId = branchId;
+
         const staff = await (prisma as any).businessMember.findMany({
-            where: { businessId: businessId },
+            where,
             include: {
                 user: {
                     select: {

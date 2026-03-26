@@ -5,7 +5,7 @@ import { AuditAction, Prisma } from '@prisma/client';
 
 export const getProducts = async (req: Request, res: Response) => {
     try {
-        const businessId = req.query.businessId as string;
+        const { businessId, branchId } = req.query as { businessId: string, branchId?: string };
         if (!businessId) {
             return res.status(400).json({ error: 'businessId is required' });
         }
@@ -15,12 +15,21 @@ export const getProducts = async (req: Request, res: Response) => {
             include: { 
                 category: true,
                 inventoryLevels: {
+                    where: branchId ? { branchId: branchId } : undefined,
                     include: { branch: true }
                 }
              },
             orderBy: { createdAt: 'desc' }
         });
-        res.json(products);
+
+        // Map branch-specific stock if branchId is provided
+        const mappedProducts = branchId ? products.map(p => ({
+            ...p,
+            // Use branch stock, or 0 if not exist in this branch
+            stockQuantity: p.inventoryLevels[0]?.stockQuantity || 0
+        })) : products;
+
+        res.json(mappedProducts);
     } catch (error) {
         console.error('Get products error:', error);
         res.status(500).json({ error: 'Internal server error' });

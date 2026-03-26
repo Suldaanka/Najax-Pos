@@ -283,6 +283,7 @@ model SaleItem {
 model Loan {
   id              String     @id @default(cuid())
   businessId      String
+  branchId        String?
   customerId      String
   saleId          String?    @unique
   totalAmount     Decimal
@@ -293,12 +294,14 @@ model Loan {
   createdAt       DateTime   @default(now())
   updatedAt       DateTime   @updatedAt
   business        Business   @relation(fields: [businessId], references: [id])
+  branch          Branch?    @relation(fields: [branchId], references: [id])
   customer        Customer   @relation(fields: [customerId], references: [id])
   sale            Sale?      @relation(fields: [saleId], references: [id])
   items           LoanItem[]
 
   @@index([businessId])
   @@index([customerId])
+  @@index([branchId])
 }
 
 model LoanItem {
@@ -472,6 +475,7 @@ model Branch {
   business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
 
   inventoryLevels InventoryLevel[]
+  loans           Loan[]
   sales           Sale[]
   purchases       Purchase[]
   expenses        Expense[]

@@ -208,6 +208,7 @@ export class SaleController {
 
     static async getSales(req: AuthRequest, res: Response) {
         try {
+            const { branchId } = req.query as { branchId?: string };
             const user = await prisma.user.findUnique({
                 where: { id: req.user.id }
             });
@@ -216,8 +217,13 @@ export class SaleController {
                 return res.status(400).json({ error: 'No active business selected' });
             }
 
+            const where: any = { businessId: user.activeBusinessId };
+            if (branchId) {
+                where.branchId = branchId;
+            }
+
             const sales = await prisma.sale.findMany({
-                where: { businessId: user.activeBusinessId },
+                where,
                 include: {
                     customer: true,
                     items: {
