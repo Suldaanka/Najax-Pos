@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import { prisma } from '../lib/prisma';
 import { AuditService } from '../services/auditService';
-import { AuditAction } from '@prisma/client';
+import { AuditAction, Prisma } from '@prisma/client';
 
 export const getProducts = async (req: Request, res: Response) => {
     try {
@@ -151,5 +151,61 @@ export const deleteProduct = async (req: Request, res: Response) => {
     } catch (error) {
         console.error('Delete product error:', error);
         res.status(500).json({ error: 'Internal server error' });
+    }
+};
+
+export const adjustStock = async (req: Request, res: Response) => {
+    try {
+        const { id } = req.params as { id: string };
+        const { stockQuantity, branchId } = req.body;
+        
+        const product = await prisma.product.findUnique({ where: { id } });
+        if (!product) return res.status(404).json({ error: 'Product not found' });
+
+        let targetBranchId = branchId;
+        if (!targetBranchId) {
+            const mainBranch = await prisma.branch.findFirst({
+                where: { businessId: product.businessId, isMain: true }
+            });
+            targetBranchId = mainBranch?.id;
+        }
+
+        if (!targetBranchId) {
+            return res.status(400).json({ error: 'No branch specified and no main branch found' });
+        }
+
+        // Use transaction to ensure consistency
+        const updatedInventory = await prisma.$transaction(async (tx) => {
+            const inv = await tx.inventoryLevel.upsert({
+                where: { productId_branchId: { productId: id, branchId: targetBranchId as string } },
+                update: { stockQuantity },
+                create: { productId: id, branchId: targetBranchId as string, stockQuantity }
+            });
+
+            // Update global product stock
+            const allLevels = await tx.inventoryLevel.findMany({ where: { productId: id } });
+            const totalStock = allLevels.reduce((sum, level) => sum.plus(level.stockQuantity), new Prisma.Decimal(0));
+            
+            await tx.product.update({
+                where: { id },
+                data: { stockQuantity: totalStock }
+            });
+
+            return inv;
+        });
+
+        await AuditService.logAction(
+            product.businessId,
+            (req as any).user.id,
+            AuditAction.UPDATE,
+            'PRODUCT',
+            product.id,
+            `Adjusted stock for ${product.name} at branch ${targetBranchId} to ${stockQuantity}`
+        );
+
+        res.json(updatedInventory);
+    } catch (error: any) {
+        console.error('Adjust stock error:', error);
+        res.status(500).json({ error: 'Internal server error', details: error.message });
     }
 };

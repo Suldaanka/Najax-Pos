@@ -1,7 +1,6 @@
 import { Router } from 'express';
 import { BranchController } from '../controllers/branchController';
-import { checkAuth } from '../middlewares/authMiddleware';
-import { checkRole } from '../middlewares/roleMiddleware';
+import { checkAuth, checkRole } from '../middlewares/authMiddleware';
 
 const router = Router();
 
