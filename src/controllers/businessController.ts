@@ -430,4 +430,72 @@ export class BusinessController {
             return res.status(500).json({ error: 'Failed to remove user' });
         }
     }
+
+    // Update user branch (Owner only)
+    static async updateUserBranch(req: AuthRequest, res: Response) {
+        try {
+            const userId = req.user?.id;
+            const targetUserId = req.params.userId as string;
+            const { branchId } = req.body;
+
+            if (!userId) {
+                return res.status(401).json({ error: 'Not authenticated' });
+            }
+
+            const currentUser = await prisma.user.findUnique({
+                where: { id: userId }
+            });
+
+            if (!currentUser?.activeBusinessId) {
+                return res.status(404).json({ error: 'No active business found' });
+            }
+
+            const currentMembership = await prisma.businessMember.findFirst({
+                where: {
+                    userId,
+                    businessId: currentUser.activeBusinessId
+                }
+            });
+
+            if (!currentMembership || currentMembership.role !== 'OWNER') {
+                return res.status(403).json({ error: 'Only business owners can update user branches' });
+            }
+
+            // Get target membership
+            const targetMembership = await prisma.businessMember.findFirst({
+                where: {
+                    userId: targetUserId,
+                    businessId: currentUser.activeBusinessId
+                },
+                include: { user: true }
+            });
+
+            if (!targetMembership) {
+                return res.status(404).json({ error: 'User is not part of your business' });
+            }
+
+            // Update branchId in BusinessMember
+            await prisma.businessMember.update({
+                where: { id: targetMembership.id },
+                data: { branchId: branchId === "global" ? null : branchId }
+            });
+
+            await AuditService.logAction(
+                currentUser.activeBusinessId,
+                userId,
+                AuditAction.UPDATE,
+                'STAFF',
+                targetUserId,
+                `Updated branch assignment for ${targetMembership.user.name}`
+            );
+
+            return res.json({
+                message: 'User branch updated successfully',
+                branchId: branchId === "global" ? null : branchId
+            });
+        } catch (error) {
+            console.error('Update user branch error:', error);
+            return res.status(500).json({ error: 'Failed to update user branch' });
+        }
+    }
 }

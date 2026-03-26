@@ -25,7 +25,7 @@ export class InvitationController {
                 return res.status(401).json({ error: 'Not authenticated', details: 'No session found' });
             }
 
-            const { email, role } = req.body;
+            const { email, role, branchId } = req.body;
             console.log('Email:', email, 'Role:', role);
 
             if (!email) {
@@ -114,6 +114,7 @@ export class InvitationController {
                     email,
                     businessId: business.id,
                     role: role || 'STAFF',
+                    branchId: branchId || null,
                     token: hashedToken,
                     invitedBy: user.id,
                     expiresAt
@@ -151,7 +152,8 @@ export class InvitationController {
                             data: {
                                 userId: targetUser.id,
                                 businessId: business.id,
-                                role: (role || 'STAFF') as any
+                                role: (role || 'STAFF') as any,
+                                branchId: branchId || null
                             }
                         });
                         console.log(`[Auto-Link] Membership created for ${targetUser.id}`);
@@ -163,7 +165,10 @@ export class InvitationController {
                     // Or if we just want to force it to this one since they were invited here.
                     await prisma.user.update({
                         where: { id: targetUser.id },
-                        data: { activeBusinessId: business.id }
+                        data: { 
+                            activeBusinessId: business.id,
+                            branchId: branchId || null
+                        }
                     });
                     console.log(`[Auto-Link] User ${targetUser.id} activeBusinessId ensured as ${business.id}`);
 

@@ -18,6 +18,7 @@ router.put('/', checkRole(['OWNER']), BusinessController.updateBusiness);
 // User Management
 router.get('/users', BusinessController.listUsers);
 router.put('/users/:userId/role', checkRole(['OWNER']), BusinessController.updateUserRole);
+router.put('/users/:userId/branch', checkRole(['OWNER']), BusinessController.updateUserBranch);
 router.delete('/users/:userId', checkRole(['OWNER']), BusinessController.removeUser);
 
 // Staff Invitation System
