@@ -145,7 +145,7 @@ export class BranchController {
 
     static async setMainBranch(req: AuthRequest, res: Response) {
         try {
-            const { id } = req.params;
+            const { id } = req.params as { id: string };
             const user = await prisma.user.findUnique({
                 where: { id: req.user.id }
             });
