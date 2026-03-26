@@ -7,5 +7,6 @@ const router = Router();
 router.post('/', checkAuth, checkRole(['OWNER']), BranchController.createBranch);
 router.get('/', checkAuth, BranchController.getBranches);
 router.post('/transfer', checkAuth, checkRole(['OWNER']), BranchController.transferStock);
+router.patch('/:id/set-main', checkAuth, checkRole(['OWNER']), BranchController.setMainBranch);
 
 export default router;

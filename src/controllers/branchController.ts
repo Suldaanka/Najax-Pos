@@ -142,4 +142,33 @@ export class BranchController {
             return res.status(400).json({ error: error.message || 'Failed to transfer stock' });
         }
     }
+
+    static async setMainBranch(req: AuthRequest, res: Response) {
+        try {
+            const { id } = req.params;
+            const user = await prisma.user.findUnique({
+                where: { id: req.user.id }
+            });
+
+            if (!user?.activeBusinessId) {
+                return res.status(400).json({ error: 'No active business selected' });
+            }
+
+            await prisma.$transaction([
+                prisma.branch.updateMany({
+                    where: { businessId: user.activeBusinessId, isMain: true },
+                    data: { isMain: false }
+                }),
+                prisma.branch.update({
+                    where: { id },
+                    data: { isMain: true }
+                })
+            ]);
+
+            return res.json({ message: 'Main branch updated successfully' });
+        } catch (error) {
+            console.error('Set main branch error:', error);
+            return res.status(500).json({ error: 'Failed to set main branch' });
+        }
+    }
 }
