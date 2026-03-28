@@ -297,23 +297,37 @@ export class SaleController {
                 return res.status(400).json({ error: 'No active business selected' });
             }
 
-            const sale = await prisma.sale.findUnique({
-                where: { id },
-                include: {
-                    customer: true,
-                    items: {
-                        include: {
-                            product: true
-                        }
-                    },
-                    staff: {
-                        select: {
-                            name: true,
-                            email: true
-                        }
+            const includeOptions = {
+                customer: true,
+                items: {
+                    include: {
+                        product: true
+                    }
+                },
+                staff: {
+                    select: {
+                        name: true,
+                        email: true
                     }
                 }
+            };
+
+            // 1. Try exact match first (CUID)
+            let sale = await prisma.sale.findUnique({
+                where: { id },
+                include: includeOptions
             });
+
+            // 2. If not found, try suffix match (e.g. last 6 characters)
+            if (!sale) {
+                sale = await prisma.sale.findFirst({
+                    where: {
+                        businessId: user.activeBusinessId,
+                        id: { endsWith: id.toLowerCase() } // Handle case-insensitivity if needed, though CUIDs are lower
+                    },
+                    include: includeOptions
+                });
+            }
 
             if (!sale || sale.businessId !== user.activeBusinessId) {
                 return res.status(404).json({ error: 'Sale not found' });
