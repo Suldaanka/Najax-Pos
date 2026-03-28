@@ -8,6 +8,7 @@ router.use(checkAuth);
 
 router.post('/', SaleController.createSale);
 router.get('/', SaleController.getSales);
+router.get('/:id', SaleController.getSaleById);
 router.delete('/:id', checkRole(['OWNER']), SaleController.deleteSale);
 
 export default router;

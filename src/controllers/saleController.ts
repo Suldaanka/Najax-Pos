@@ -285,4 +285,44 @@ export class SaleController {
             });
         }
     }
+
+    static async getSaleById(req: AuthRequest, res: Response) {
+        try {
+            const id = req.params.id as string;
+            const user = await prisma.user.findUnique({
+                where: { id: req.user.id }
+            });
+
+            if (!user?.activeBusinessId) {
+                return res.status(400).json({ error: 'No active business selected' });
+            }
+
+            const sale = await prisma.sale.findUnique({
+                where: { id },
+                include: {
+                    customer: true,
+                    items: {
+                        include: {
+                            product: true
+                        }
+                    },
+                    staff: {
+                        select: {
+                            name: true,
+                            email: true
+                        }
+                    }
+                }
+            });
+
+            if (!sale || sale.businessId !== user.activeBusinessId) {
+                return res.status(404).json({ error: 'Sale not found' });
+            }
+
+            return res.json(sale);
+        } catch (error) {
+            console.error('Get sale by ID error:', error);
+            return res.status(500).json({ error: 'Failed to fetch sale' });
+        }
+    }
 }
