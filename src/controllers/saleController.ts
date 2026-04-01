@@ -288,7 +288,11 @@ export class SaleController {
 
     static async getSaleById(req: AuthRequest, res: Response) {
         try {
-            const id = req.params.id as string;
+            let id = req.params.id as string;
+            // Strip leading '#' if present
+            if (id.startsWith('#')) {
+                id = id.substring(1);
+            }
             const user = await prisma.user.findUnique({
                 where: { id: req.user.id }
             });
