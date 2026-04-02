@@ -57,6 +57,15 @@ export class SaleController {
                                 price: item.price
                             }))
                         }
+                    },
+                    include: {
+                        branch: true,
+                        customer: true,
+                        items: {
+                            include: {
+                                product: true
+                            }
+                        }
                     }
                 });
 
