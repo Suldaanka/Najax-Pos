@@ -24,7 +24,7 @@ export const checkAuth = async (req: AuthRequest, res: Response, next: NextFunct
         req.user = session.user;
         req.session = session.session;
 
-        // Fetch user role for the active business
+        // Fetch user role and business name for the active business
         if (req.user.activeBusinessId) {
             const membership = await prisma.businessMember.findUnique({
                 where: {
@@ -32,11 +32,19 @@ export const checkAuth = async (req: AuthRequest, res: Response, next: NextFunct
                         userId: req.user.id,
                         businessId: req.user.activeBusinessId
                     }
+                },
+                include: {
+                    business: {
+                        select: {
+                            name: true
+                        }
+                    }
                 }
             });
             
             if (membership) {
                 req.user.role = membership.role;
+                req.user.activeBusinessName = membership.business.name;
             }
         }
 

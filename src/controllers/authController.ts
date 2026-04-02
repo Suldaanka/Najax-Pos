@@ -117,7 +117,8 @@ export class AuthController {
             let business = null;
             if (user.activeBusinessId) {
                 business = await prisma.business.findUnique({
-                    where: { id: user.activeBusinessId }
+                    where: { id: user.activeBusinessId },
+                    select: { id: true, name: true, address: true, phone: true }
                 });
             }
 
@@ -126,6 +127,7 @@ export class AuthController {
                 email: user.email,
                 name: user.name,
                 activeBusinessId: user.activeBusinessId,
+                activeBusinessName: business?.name,
                 business: business
             });
         } catch (error: any) {
