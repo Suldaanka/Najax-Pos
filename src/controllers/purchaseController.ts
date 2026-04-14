@@ -45,7 +45,7 @@ export class PurchaseController {
                 // 1. Create the purchase
                 const purchase = await tx.purchase.create({
                     data: {
-                        businessId: user.activeBusinessId!,
+                        businessId,
                         supplierId,
                         totalAmount,
                         date: date ? new Date(date) : new Date(),
@@ -83,7 +83,7 @@ export class PurchaseController {
                             // Record log
                             await tx.stockLog.create({
                                 data: {
-                                    businessId: user.activeBusinessId!,
+                                    businessId,
                                     productId: item.productId,
                                     type: 'PURCHASE',
                                     quantity: item.quantity,

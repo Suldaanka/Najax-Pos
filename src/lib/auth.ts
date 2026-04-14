@@ -4,7 +4,6 @@ import { prisma } from "./prisma";
 import { InvitationService } from "../services/invitationService";
 import { emailService } from "../services/emailService";
 import { expo } from "@better-auth/expo";
-import { idToken } from "better-auth/plugins";
 
 const getBaseURL = () => {
     // Force backend's own domain for OAuth redirect consistency
@@ -16,8 +15,7 @@ const getBaseURL = () => {
 
 export const auth = betterAuth({
     plugins: [
-        expo(),
-        idToken()
+        expo()
     ],
     baseURL: getBaseURL(),
     trustHost: true, // Allow Railway proxy headers for accurate domain/protocol detection
