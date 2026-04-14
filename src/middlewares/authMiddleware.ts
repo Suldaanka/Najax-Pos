@@ -21,7 +21,15 @@ export const checkAuth = async (req: AuthRequest, res: Response, next: NextFunct
             return res.status(401).json({ error: "Unauthorized" });
         }
 
-        req.user = session.user;
+        const dbUser = await prisma.user.findUnique({
+            where: { id: session.user.id }
+        });
+
+        if (!dbUser) {
+            return res.status(401).json({ error: "User not found in database" });
+        }
+
+        req.user = dbUser;
         req.session = session.session;
 
         // Fetch user role and business name for the active business

@@ -13,17 +13,15 @@ export class StockLogController {
                 return res.status(401).json({ error: 'Not authenticated' });
             }
 
-            const user = await prisma.user.findUnique({
-                where: { id: userId }
-            });
+            const businessId = (req.query.businessId as string) || req.user?.activeBusinessId;
 
-            if (!user?.activeBusinessId) {
+            if (!businessId) {
                 return res.status(404).json({ error: 'No active business found' });
             }
 
             const logs = await prisma.stockLog.findMany({
                 where: {
-                    businessId: user.activeBusinessId,
+                    businessId,
                     productId: productId as string
                 },
                 orderBy: {
@@ -48,17 +46,15 @@ export class StockLogController {
                 return res.status(401).json({ error: 'Not authenticated' });
             }
 
-            const user = await prisma.user.findUnique({
-                where: { id: userId }
-            });
+            const businessId = (req.query.businessId as string) || req.user?.activeBusinessId;
 
-            if (!user?.activeBusinessId) {
+            if (!businessId) {
                 return res.status(404).json({ error: 'No active business found' });
             }
 
             const logs = await prisma.stockLog.findMany({
                 where: {
-                    businessId: user.activeBusinessId
+                    businessId,
                 },
                 include: {
                     product: {

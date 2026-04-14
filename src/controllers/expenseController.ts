@@ -6,7 +6,9 @@ import { AuditAction } from '@prisma/client';
 
 export const getExpenses = async (req: AuthRequest, res: Response) => {
     try {
-        const { businessId, branchId } = req.query as { businessId: string, branchId?: string };
+        const { branchId } = req.query as { branchId?: string };
+        const businessId = (req.query.businessId as string) || req.user?.activeBusinessId;
+
         if (!businessId) {
             return res.status(400).json({ error: 'businessId is required' });
         }
@@ -34,7 +36,9 @@ export const getExpenses = async (req: AuthRequest, res: Response) => {
 
 export const createExpense = async (req: AuthRequest, res: Response) => {
     try {
-        const { businessId, userId, amount, description, category, date, branchId } = req.body;
+        const { amount, description, category, date, branchId } = req.body;
+        const businessId = req.body.businessId || req.user?.activeBusinessId;
+        const userId = req.body.userId || req.user?.id;
 
         if (!businessId || !userId || amount === undefined || !description) {
             return res.status(400).json({ error: 'Missing required fields' });

@@ -5,16 +5,14 @@ import { AuthRequest } from '../middlewares/authMiddleware';
 export class RecurringExpenseController {
     static async getRecurringExpenses(req: AuthRequest, res: Response) {
         try {
-            const user = await prisma.user.findUnique({
-                where: { id: req.user.id }
-            });
+            const businessId = (req.query.businessId as string) || req.user?.activeBusinessId;
 
-            if (!user?.activeBusinessId) {
+            if (!businessId) {
                 return res.status(400).json({ error: 'No active business selected' });
             }
 
             const recurringExpenses = await prisma.recurringExpense.findMany({
-                where: { businessId: user.activeBusinessId },
+                where: { businessId },
                 orderBy: { name: 'asc' }
             });
 
@@ -28,11 +26,9 @@ export class RecurringExpenseController {
     static async createRecurringExpense(req: AuthRequest, res: Response) {
         try {
             const { name, amount } = req.body;
-            const user = await prisma.user.findUnique({
-                where: { id: req.user.id }
-            });
+            const businessId = req.body.businessId || req.user?.activeBusinessId;
 
-            if (!user?.activeBusinessId) {
+            if (!businessId) {
                 return res.status(400).json({ error: 'No active business selected' });
             }
 
@@ -40,7 +36,7 @@ export class RecurringExpenseController {
                 data: {
                     name,
                     amount,
-                    businessId: user.activeBusinessId
+                    businessId
                 }
             });
 

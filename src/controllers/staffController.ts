@@ -1,9 +1,12 @@
 import { Request, Response } from 'express';
+import { AuthRequest } from '../middlewares/authMiddleware';
 import { prisma } from '../lib/prisma';
 
-export const getStaff = async (req: Request, res: Response) => {
+export const getStaff = async (req: AuthRequest, res: Response) => {
     try {
-        const { businessId, branchId } = req.query as { businessId: string, branchId?: string };
+        const { branchId } = req.query as { branchId?: string };
+        const businessId = (req.query.businessId as string) || req.user?.activeBusinessId;
+        
         if (!businessId) {
             return res.status(400).json({ error: 'businessId is required' });
         }

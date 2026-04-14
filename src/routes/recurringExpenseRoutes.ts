@@ -4,7 +4,7 @@ import { checkAuth, checkRole } from '../middlewares/authMiddleware';
 
 const router = Router();
 
-router.use((req, res, next) => checkAuth(req as any, res, next));
+router.use(checkAuth);
 
 router.get('/', RecurringExpenseController.getRecurringExpenses);
 router.post('/', checkRole(['OWNER']), RecurringExpenseController.createRecurringExpense);

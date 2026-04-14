@@ -8,14 +8,14 @@ export class AuditController {
      */
     static async getLogs(req: AuthRequest, res: Response) {
         try {
-            const businessId = req.query.businessId as string;
+            const businessId = (req.query.businessId as string) || req.user?.activeBusinessId;
             
             if (!businessId) {
                 return res.status(400).json({ error: 'businessId is required' });
             }
 
-            // Verify the user is querying their own active business
-            if (req.user.activeBusinessId !== businessId) {
+            // Verify permission if it's explicitly passed and differs
+            if (req.query.businessId && req.user.activeBusinessId !== businessId) {
                 return res.status(403).json({ error: 'You do not have permission to view these logs.' });
             }
 

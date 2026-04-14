@@ -1,9 +1,10 @@
 import { Request, Response } from 'express';
+import { AuthRequest } from '../middlewares/authMiddleware';
 import { prisma } from '../lib/prisma';
 
-export const getCategories = async (req: Request, res: Response) => {
+export const getCategories = async (req: AuthRequest, res: Response) => {
     try {
-        const businessId = req.query.businessId as string;
+        const businessId = (req.query.businessId as string) || req.user?.activeBusinessId;
         if (!businessId) {
             return res.status(400).json({ error: 'businessId is required' });
         }
@@ -19,9 +20,10 @@ export const getCategories = async (req: Request, res: Response) => {
     }
 };
 
-export const createCategory = async (req: Request, res: Response) => {
+export const createCategory = async (req: AuthRequest, res: Response) => {
     try {
-        const { businessId, name } = req.body;
+        const { name } = req.body;
+        const businessId = req.body.businessId || req.user?.activeBusinessId;
 
         if (!businessId || !name) {
             return res.status(400).json({ error: 'Missing required fields' });

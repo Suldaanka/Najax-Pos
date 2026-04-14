@@ -6,16 +6,14 @@ import { Prisma } from '@prisma/client';
 export class PurchaseController {
     static async getPurchases(req: AuthRequest, res: Response) {
         try {
-            const user = await prisma.user.findUnique({
-                where: { id: req.user.id }
-            });
+            const businessId = (req.query.businessId as string) || req.user?.activeBusinessId;
 
-            if (!user?.activeBusinessId) {
+            if (!businessId) {
                 return res.status(400).json({ error: 'No active business selected' });
             }
 
             const purchases = await prisma.purchase.findMany({
-                where: { businessId: user.activeBusinessId },
+                where: { businessId },
                 include: {
                     supplier: true,
                     items: {
@@ -37,12 +35,9 @@ export class PurchaseController {
     static async createPurchase(req: AuthRequest, res: Response) {
         try {
             const { supplierId, totalAmount, date, items } = req.body;
-            
-            const user = await prisma.user.findUnique({
-                where: { id: req.user.id }
-            });
+            const businessId = req.body.businessId || req.user?.activeBusinessId;
 
-            if (!user?.activeBusinessId) {
+            if (!businessId) {
                 return res.status(400).json({ error: 'No active business selected' });
             }
 

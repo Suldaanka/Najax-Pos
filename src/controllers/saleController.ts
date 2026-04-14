@@ -218,15 +218,13 @@ export class SaleController {
     static async getSales(req: AuthRequest, res: Response) {
         try {
             const { branchId } = req.query as { branchId?: string };
-            const user = await prisma.user.findUnique({
-                where: { id: req.user.id }
-            });
+            const businessId = (req.query.businessId as string) || req.user?.activeBusinessId;
 
-            if (!user?.activeBusinessId) {
+            if (!businessId) {
                 return res.status(400).json({ error: 'No active business selected' });
             }
 
-            const where: any = { businessId: user.activeBusinessId };
+            const where: any = { businessId };
             if (branchId) {
                 where.branchId = branchId;
             }
@@ -302,11 +300,9 @@ export class SaleController {
             if (id.startsWith('#')) {
                 id = id.substring(1);
             }
-            const user = await prisma.user.findUnique({
-                where: { id: req.user.id }
-            });
+            const businessId = (req.query.businessId as string) || req.user?.activeBusinessId;
 
-            if (!user?.activeBusinessId) {
+            if (!businessId) {
                 return res.status(400).json({ error: 'No active business selected' });
             }
 
@@ -335,14 +331,14 @@ export class SaleController {
             if (!sale) {
                 sale = await prisma.sale.findFirst({
                     where: {
-                        businessId: user.activeBusinessId,
+                        businessId,
                         id: { endsWith: id.toLowerCase() } // Handle case-insensitivity if needed, though CUIDs are lower
                     },
                     include: includeOptions
                 });
             }
 
-            if (!sale || sale.businessId !== user.activeBusinessId) {
+            if (!sale || sale.businessId !== businessId) {
                 return res.status(404).json({ error: 'Sale not found' });
             }
 

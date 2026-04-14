@@ -4,7 +4,9 @@ import { AuthRequest } from '../middlewares/authMiddleware';
 
 export const getCustomers = async (req: AuthRequest, res: Response) => {
     try {
-        const { businessId, branchId } = req.query as { businessId: string, branchId?: string };
+        const { branchId } = req.query as { branchId?: string };
+        const businessId = (req.query.businessId as string) || req.user?.activeBusinessId;
+        
         if (!businessId) {
             return res.status(400).json({ error: 'businessId is required' });
         }
@@ -43,7 +45,8 @@ export const getCustomer = async (req: AuthRequest, res: Response) => {
 
 export const createCustomer = async (req: AuthRequest, res: Response) => {
     try {
-        const { businessId, name, phone, branchId } = req.body;
+        const { name, phone, branchId } = req.body;
+        const businessId = req.body.businessId || req.user?.activeBusinessId;
 
         if (!businessId || !name) {
             return res.status(400).json({ error: 'Missing required fields' });

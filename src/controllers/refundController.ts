@@ -8,11 +8,10 @@ export class RefundController {
     static async processRefund(req: AuthRequest, res: Response) {
         try {
             const { saleId, items, reason } = req.body; // items: [{ productId, quantity }]
-            const user = await prisma.user.findUnique({
-                where: { id: req.user.id }
-            });
+            const businessId = req.body.businessId || req.user?.activeBusinessId;
+            const userId = req.user?.id;
 
-            if (!user?.activeBusinessId) {
+            if (!businessId) {
                 return res.status(400).json({ error: 'No active business selected' });
             }
 
@@ -21,7 +20,7 @@ export class RefundController {
                 include: { items: true }
             });
 
-            if (!sale || sale.businessId !== user.activeBusinessId) {
+            if (!sale || sale.businessId !== businessId) {
                 return res.status(404).json({ error: 'Sale not found' });
             }
 
@@ -63,7 +62,7 @@ export class RefundController {
                             // Record stock log
                             await tx.stockLog.create({
                                 data: {
-                                    businessId: user.activeBusinessId!,
+                                    businessId,
                                     branchId: sale.branchId,
                                     productId: item.productId,
                                     type: 'RETURN',
@@ -90,10 +89,10 @@ export class RefundController {
                 // Create the Refund record
                 const refund = await tx.refund.create({
                     data: {
-                        businessId: user.activeBusinessId!,
+                        businessId,
                         branchId: sale.branchId,
                         saleId: sale.id,
-                        staffId: user.id,
+                        staffId: userId,
                         totalAmount: refundTotal,
                         reason,
                         items: {
@@ -106,8 +105,8 @@ export class RefundController {
             });
 
             await AuditService.logAction(
-                user.activeBusinessId,
-                user.id,
+                businessId,
+                userId,
                 AuditAction.CREATE,
                 'REFUND',
                 result.id,
@@ -123,16 +122,14 @@ export class RefundController {
 
     static async getRefunds(req: AuthRequest, res: Response) {
         try {
-            const user = await prisma.user.findUnique({
-                where: { id: req.user.id }
-            });
+            const businessId = (req.query.businessId as string) || req.user?.activeBusinessId;
 
-            if (!user?.activeBusinessId) {
+            if (!businessId) {
                 return res.status(400).json({ error: 'No active business selected' });
             }
 
             const refunds = await prisma.refund.findMany({
-                where: { businessId: user.activeBusinessId },
+                where: { businessId },
                 include: {
                     sale: true,
                     items: { include: { product: true } },

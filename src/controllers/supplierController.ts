@@ -5,16 +5,14 @@ import { AuthRequest } from '../middlewares/authMiddleware';
 export class SupplierController {
     static async getSuppliers(req: AuthRequest, res: Response) {
         try {
-            const user = await prisma.user.findUnique({
-                where: { id: req.user.id }
-            });
+            const businessId = (req.query.businessId as string) || req.user?.activeBusinessId;
 
-            if (!user?.activeBusinessId) {
+            if (!businessId) {
                 return res.status(400).json({ error: 'No active business selected' });
             }
 
             const suppliers = await prisma.supplier.findMany({
-                where: { businessId: user.activeBusinessId },
+                where: { businessId },
                 orderBy: { name: 'asc' }
             });
 
@@ -28,18 +26,15 @@ export class SupplierController {
     static async createSupplier(req: AuthRequest, res: Response) {
         try {
             const { name, contactPerson, email, phone, address } = req.body;
-            
-            const user = await prisma.user.findUnique({
-                where: { id: req.user.id }
-            });
+            const businessId = req.body.businessId || req.user?.activeBusinessId;
 
-            if (!user?.activeBusinessId) {
+            if (!businessId) {
                 return res.status(400).json({ error: 'No active business selected' });
             }
 
             const supplier = await prisma.supplier.create({
                 data: {
-                    businessId: user.activeBusinessId,
+                    businessId,
                     name,
                     contactPerson,
                     email,

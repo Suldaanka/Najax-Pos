@@ -183,7 +183,7 @@ export class BusinessController {
     static async switchBusiness(req: AuthRequest, res: Response) {
         try {
             const userId = req.user?.id;
-            const { businessId } = req.body;
+            const businessId = req.body.businessId || req.user?.activeBusinessId;
 
             if (!userId) {
                 return res.status(401).json({ error: 'Not authenticated' });

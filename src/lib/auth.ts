@@ -4,17 +4,21 @@ import { prisma } from "./prisma";
 import { InvitationService } from "../services/invitationService";
 import { emailService } from "../services/emailService";
 import { expo } from "@better-auth/expo";
+import { idToken } from "better-auth/plugins";
 
 const getBaseURL = () => {
     // Force backend's own domain for OAuth redirect consistency
-    const rawUrl = process.env.BETTER_AUTH_URL || (process.env.NODE_ENV === "production" ? "https://najax-pos-production.up.railway.app" : "http://localhost:5000");
+    const rawUrl = process.env.BETTER_AUTH_URL || (process.env.NODE_ENV === "production" ? "https://najax-backend-production.up.railway.app" : "http://localhost:5000");
     const baseUrl = rawUrl.endsWith("/api/auth") ? rawUrl : (rawUrl.endsWith("/") ? `${rawUrl}api/auth` : `${rawUrl}/api/auth`);
     console.log(`[AUTH] Initializing with baseURL: ${baseUrl} (NODE_ENV: ${process.env.NODE_ENV})`);
     return baseUrl;
 };
 
 export const auth = betterAuth({
-    plugins: [expo()],
+    plugins: [
+        expo(),
+        idToken()
+    ],
     baseURL: getBaseURL(),
     trustHost: true, // Allow Railway proxy headers for accurate domain/protocol detection
     secret: process.env.BETTER_AUTH_SECRET,
@@ -54,6 +58,7 @@ export const auth = betterAuth({
         process.env.BETTER_AUTH_URL || "https://najax-pos-production.up.railway.app",
         "https://najax-pos-frontend-production.up.railway.app",
         "https://najax-pos-production.up.railway.app",
+        "https://najax-backend-production.up.railway.app",
         "najaxapp://",
         "najaxapp://auth/callback",
         "najaxapp://dashboard",
@@ -62,6 +67,9 @@ export const auth = betterAuth({
         "exp://*",
         "http://localhost:3000",
         "http://localhost:5000",
+        "http://localhost:8081",  // Expo dev server
+        "http://localhost:19006", // Expo web
+        "http://10.0.2.2:8081",  // Android emulator → Expo dev server
     ],
     advanced: {
         cookiePrefix: "najax",
