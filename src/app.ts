@@ -23,6 +23,7 @@ import subscriptionRoutes from './routes/subscription';
 import auditRoutes from './routes/auditRoutes';
 import branchRoutes from './routes/branchRoutes';
 import refundRoutes from './routes/refundRoutes';
+import supplierRoutes from './routes/supplier';
 
 const app = express();
 
@@ -71,6 +72,7 @@ app.use('/api/subscriptions', subscriptionRoutes);
 app.use('/api/audit-logs', auditRoutes);
 app.use('/api/branches', branchRoutes);
 app.use('/api/refunds', refundRoutes);
+app.use('/api/suppliers', supplierRoutes);
 app.use('/api', authRoutes); // Custom auth routes
 
 // Error handling middleware
