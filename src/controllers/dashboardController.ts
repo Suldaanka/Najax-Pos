@@ -9,31 +9,15 @@ export class DashboardController {
                 where: { id: req.user.id }
             });
 
-            let businessId = user?.activeBusinessId;
+            const businessId = user?.activeBusinessId || req.user.activeBusinessId;
 
-            // Self-healing: If no active business is selected, find the first business the user belongs to
             if (!businessId) {
-                const firstMembership = await prisma.businessMember.findFirst({
-                    where: { userId: req.user.id },
-                    select: { businessId: true }
+                console.warn(`[DASHBOARD] User ${req.user.id} has no memberships and no active business.`);
+                return res.status(400).json({ 
+                    error: 'No active business selected',
+                    detail: 'User has no business memberships. Please create a business first.',
+                    userId: req.user.id
                 });
-
-                if (firstMembership) {
-                    businessId = firstMembership.businessId;
-                    // Update the user record so future requests are faster
-                    await prisma.user.update({
-                        where: { id: req.user.id },
-                        data: { activeBusinessId: businessId }
-                    });
-                    console.log(`[DASHBOARD] Self-healed: Set activeBusinessId to ${businessId} for user ${req.user.id}`);
-                } else {
-                    console.warn(`[DASHBOARD] User ${req.user.id} has no memberships and no active business.`);
-                    return res.status(400).json({ 
-                        error: 'No active business selected',
-                        detail: 'User has no business memberships. Please create a business first.',
-                        userId: req.user.id
-                    });
-                }
             }
 
             console.log('Prisma models:', Object.keys(prisma).filter(k => !k.startsWith('_') && k[0] === k[0].toLowerCase()));

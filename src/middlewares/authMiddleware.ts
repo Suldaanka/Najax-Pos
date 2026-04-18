@@ -68,7 +68,34 @@ export const checkAuth = async (req: AuthRequest, res: Response, next: NextFunct
         }
 
         // Fetch user role and business name for the active business
-        if (req.user.activeBusinessId) {
+        // OR Self-heal if no activeBusinessId is currently selected
+        if (!req.user.activeBusinessId) {
+            const firstMembership = await prisma.businessMember.findFirst({
+                where: { userId: req.user.id },
+                include: {
+                    business: {
+                        select: { name: true }
+                    }
+                }
+            });
+
+            if (firstMembership) {
+                // Update the user record so future requests are faster
+                await prisma.user.update({
+                    where: { id: req.user.id },
+                    data: { activeBusinessId: firstMembership.businessId }
+                });
+                
+                req.user.activeBusinessId = firstMembership.businessId;
+                req.user.role = firstMembership.role;
+                req.user.activeBusinessName = firstMembership.business.name;
+                
+                if (process.env.NODE_ENV !== 'production') {
+                    console.log(`[AUTH] Self-healed: Set activeBusinessId to ${firstMembership.businessId} for user ${req.user.id}`);
+                }
+            }
+        } else {
+            // Already has an activeBusinessId, just fetch the role/name
             const membership = await prisma.businessMember.findUnique({
                 where: {
                     userId_businessId: {
