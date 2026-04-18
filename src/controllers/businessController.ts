@@ -49,9 +49,13 @@ export class BusinessController {
                 message: 'Business created successfully',
                 business
             });
-        } catch (error) {
+        } catch (error: any) {
             console.error('Create business error:', error);
-            return res.status(500).json({ error: 'Failed to create business' });
+            return res.status(500).json({ 
+                error: 'Failed to create business', 
+                detail: error?.message,
+                userId: req.user?.id 
+            });
         }
     }
 

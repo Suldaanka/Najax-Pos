@@ -10,7 +10,12 @@ export class DashboardController {
             });
 
             if (!user?.activeBusinessId) {
-                return res.status(400).json({ error: 'No active business selected' });
+                console.warn(`[DASHBOARD] User ${req.user.id} has no active business. Current DB State:`, user);
+                return res.status(400).json({ 
+                    error: 'No active business selected',
+                    userId: req.user.id,
+                    hasActiveBusinessId: !!user?.activeBusinessId
+                });
             }
 
             const businessId = user.activeBusinessId;

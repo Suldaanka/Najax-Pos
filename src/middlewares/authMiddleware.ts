@@ -63,6 +63,10 @@ export const checkAuth = async (req: AuthRequest, res: Response, next: NextFunct
         req.user = dbUser;
         req.session = sessionRecord;
 
+        if (__DEV__ || true) { // Force logging for now
+            console.log(`[AUTH] User: ${dbUser.email}, ID: ${dbUser.id}, ActiveBusiness: ${dbUser.activeBusinessId}`);
+        }
+
         // Fetch user role and business name for the active business
         if (req.user.activeBusinessId) {
             const membership = await prisma.businessMember.findUnique({
